@@ -69,7 +69,7 @@ export default function FarmerDashboard() {
 
   // Fetch crops from JSON server
   const fetchCrops = () => {
-    fetch("http://localhost:3001/crops")
+    fetch("https://ghirass-api.onrender.com/crops")
       .then((res) => res.json())
       .then((data) => {
           const filtered = data.filter(
@@ -116,7 +116,7 @@ export default function FarmerDashboard() {
         farmerId: farmerInfo?.id,
     };
 
-    fetch("http://localhost:3001/crops", {
+    fetch("https://ghirass-api.onrender.com/crops", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cropData),
@@ -143,7 +143,7 @@ export default function FarmerDashboard() {
   // Delete crop
   const handleDelete = (id) => {
     if (!window.confirm("Are you sure you want to delete this crop?")) return;
-    fetch(`http://localhost:3001/crops/${id}`, { method: "DELETE" })
+    fetch(`https://ghirass-api.onrender.com/crops/${id}`, { method: "DELETE" })
       .then(() => fetchCrops())
       .catch((err) => console.error("Error deleting crop:", err));
   };
@@ -155,7 +155,7 @@ export default function FarmerDashboard() {
   };
   const handleUpdate = (e) => {
     e.preventDefault();
-    fetch(`http://localhost:3001/crops/${cropToEdit.id}`, {
+    fetch(`https://ghirass-api.onrender.com/crops/${cropToEdit.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cropToEdit),

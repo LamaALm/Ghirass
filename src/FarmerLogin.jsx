@@ -47,7 +47,7 @@ export default function FarmerLogin() {
     }
 
     // Create new farmer record
-    fetch("http://localhost:3001/farmers", {
+    fetch("https://ghirass-api.onrender.com/farmers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(farmerData),
@@ -65,7 +65,7 @@ export default function FarmerLogin() {
     e.preventDefault();
 
     fetch(
-      `http://localhost:3001/farmers?username=${farmerData.username}&password=${farmerData.password}`
+      `https://ghirass-api.onrender.com/farmers?username=${farmerData.username}&password=${farmerData.password}`
     )
       .then((res) => res.json())
       .then((data) => {

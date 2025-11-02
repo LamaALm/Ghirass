@@ -23,7 +23,7 @@ export default function BuyerDashboard() {
 
   // Fetch crops from JSON server
   useEffect(() => {
-    fetch("http://localhost:3001/crops")
+    fetch("https://ghirass-api.onrender.com/crops")
       .then((res) => res.json())
       .then((data) => {
         setCrops(data);
