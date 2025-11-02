@@ -1,0 +1,48 @@
+{
+  "farmers": [
+    {
+      "id": "1414",
+      "name": "Lama Almofadda",
+      "farmName": "Lama",
+      "city": "Jubail",
+      "contact": "0563791407",
+      "username": "Lamaahmed",
+      "password": "Qwe123"
+    },
+    {
+      "id": "c9bf",
+      "name": "Ahmed Mohammed",
+      "farmName": "AhmedMohammed",
+      "city": "Dammam",
+      "contact": "0563791407",
+      "username": "Ahmed",
+      "password": "aaa111"
+    }
+  ],
+  "crops": [
+    {
+      "id": "8ca2",
+      "name": "Cucumber",
+      "type": "Vegetable",
+      "price": "8",
+      "region": "Dammam",
+      "contact": "0563791407",
+      "image": "https://tse1.mm.bing.net/th/id/OIP.NLEueRgZNxrIrjfqxeug2gHaHa?rs=1&pid=ImgDetMain&o=7&rm=3",
+      "farmer": "Ahmed Mohammed",
+      "farmName": "AhmedMohammed",
+      "farmerId": "c9bf"
+    },
+    {
+      "id": "5ff5",
+      "name": "Tomatoes",
+      "type": "Fruit",
+      "price": "13",
+      "region": "Jubail",
+      "contact": "0563791407",
+      "image": "https://tse1.mm.bing.net/th/id/OIP.7BgzPrvHKJguzWzo-LxGHwHaHa?rs=1&pid=ImgDetMain&o=7&rm=3",
+      "farmer": "Ahmed Mohammed",
+      "farmName": "AhmedMohammed",
+      "farmerId": "c9bf"
+    }
+  ]
+}

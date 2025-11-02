@@ -1,235 +1,475 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import PestAlerts from "./PestAlerts";
-import ManualOverride from "./ManualOverride";
-
-// helpers
-const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
-const rnd = (min, max) => Math.random() * (max - min) + min;
-
-// generate a timestamp label like "14:05"
-const timeLabel = () => {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-};
-
-// small arrow indicator
-function Trend({ value, prev }) {
-  const diff = value - prev;
-  const up = diff > 0.05;
-  const down = diff < -0.05;
-  const color = up ? "text-green-600" : down ? "text-red-600" : "text-gray-400";
-  const symbol = up ? "↑" : down ? "↓" : "→";
-  const sign = diff > 0 ? "+" : diff < 0 ? "" : "";
-  return (
-    <span className={`ml-2 text-sm ${color}`} title={`${sign}${diff.toFixed(1)}`}>
-      {symbol}
-    </span>
-  );
-}
+import React, { useState, useEffect } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { PlusCircle, Edit2, Trash2, X } from "lucide-react";
 
 export default function FarmerDashboard() {
-  // initial realistic values
-  const [sensor, setSensor] = useState({
-    temperature: 28.5, // °C
-    humidity: 63,      // %
-    soilMoisture: 42,  // %
-    irrigationStatus: "Automatic",
-  });
-  
-  const [irrigationStatus, setIrrigationStatus] = useState("Automatic");
+
+  // Get logged-in farmer info from localStorage
+  const farmerInfo = JSON.parse(localStorage.getItem("farmerData"));
+
+  // Sensor state
+  const [humidity, setHumidity] = useState(45);
+  const [temperature, setTemperature] = useState(28);
+  const [irrigationOn, setIrrigationOn] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleString());
+  const [isManualMode, setIsManualMode] = useState(false);
 
 
-  const prevRef = useRef(sensor);
-  const [series, setSeries] = useState([
-    { name: timeLabel(), moisture: sensor.soilMoisture },
-    { name: "", moisture: 38 },
-    { name: "", moisture: 40 },
-    { name: "", moisture: 42 },
-    { name: "", moisture: 43 },
-    { name: "", moisture: 41 },
+
+  // UI control states
+  const [showForm, setShowForm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Data for chart and alerts
+  const [data] = useState([
+    { day: "Sat", humidity: 45 },
+    { day: "Sun", humidity: 50 },
+    { day: "Mon", humidity: 47 },
+    { day: "Tue", humidity: 55 },
+    { day: "Wed", humidity: 48 },
+  ]);
+  const [alerts] = useState([
+    { id: 1, message: "Possible pest detected near Lettuce area", date: "2025-11-01" },
+    { id: 2, message: "Humidity dropped below safe level", date: "2025-10-31" },
   ]);
 
-  // crop listings (static demo)
-  const cropListings = useMemo(
-    () => [
-      { id: 1, name: "Tomatoes", status: "Available", price: "20 SAR", date: "2025-10-25" },
-      { id: 2, name: "Lettuce", status: "Reserved", price: "10 SAR", date: "2025-10-26" },
-    ],
-    []
-  );
+  // Crop data
+  const [myCrops, setMyCrops] = useState([]);
+  const [newCrop, setNewCrop] = useState({
+    name: "",
+    type: "",
+    price: "",
+    region: farmerInfo?.city || "",
+    contact: farmerInfo?.contact || "",
+    image: "",
+    farmer: farmerInfo?.name || "Unknown Farmer",
+    farmName: farmerInfo?.farmName || "",
+  });
 
-  // live updates every 5s
+  const [cropToEdit, setCropToEdit] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+
+  // Predefined crop images
+  const cropImages = {
+    Tomatoes: "https://tse1.mm.bing.net/th/id/OIP.7BgzPrvHKJguzWzo-LxGHwHaHa?rs=1&pid=ImgDetMain&o=7&rm=3",
+    Lettuce: "https://daganghalal.blob.core.windows.net/28167/Product/1000x1000__90-1641813846461.jpg",
+    Cucumber: "https://tse1.mm.bing.net/th/id/OIP.NLEueRgZNxrIrjfqxeug2gHaHa?rs=1&pid=ImgDetMain&o=7&rm=3",
+    Strawberries: "https://www.bigfresh.ae/uploads/items/d07bbbda65c25016411db31fff4a4c1d.jpg",
+    Eggplant: "https://kuwait.grandhyper.com/image/cache/catalog/products/1/1328-1000x1000.jpg",
+    Peppers: "https://tse2.mm.bing.net/th/id/OIP.VHPKJVSwG_524u6QdUn_4gHaE8?rs=1&pid=ImgDetMain&o=7&rm=3",
+    Grapes: "https://i5.walmartimages.com/asr/f236462b-dc7a-47ff-90d4-7281369ce012.7a2478c3d27e4526eac51d6fda7bf11f.jpeg",
+  };
+
+  // Fetch crops from JSON server
+  const fetchCrops = () => {
+    fetch("http://localhost:3001/crops")
+      .then((res) => res.json())
+      .then((data) => {
+          const filtered = data.filter(
+           (crop) => crop.farmerId === farmerInfo?.id
+          );
+          setMyCrops(filtered);
+      })
+
+      .catch((err) => console.error("Error fetching crops:", err));
+  };
   useEffect(() => {
-    const iv = setInterval(() => {
-      // gentle drift for realism
-      const next = {
-        temperature: clamp(sensor.temperature + rnd(-0.6, 0.6), 20, 35),
-        humidity: clamp(sensor.humidity + rnd(-1.5, 1.5), 40, 75),
-        soilMoisture: clamp(sensor.soilMoisture + rnd(-1.2, 1.2), 30, 65),
-        irrigationStatus: sensor.irrigationStatus, // keep same for now
-      };
+    fetchCrops();
+  }, []);
 
-      setSensor(next);
+  // Suggestion logic for crop name
+  const cropNames = Object.keys(cropImages);
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    setNewCrop({ ...newCrop, name: value });
+    if (value.length > 0) {
+      const filtered = cropNames.filter((n) =>
+        n.toLowerCase().startsWith(value.toLowerCase())
+      );
+      setSuggestions(filtered);
+    } else setSuggestions([]);
+  };
+  const handleSelectName = (name) => {
+    setNewCrop({ ...newCrop, name, image: cropImages[name] || "" });
+    setSuggestions([]);
+  };
 
-      // push into chart (keep last 6 points)
-      setSeries((curr) => {
-        const label = timeLabel();
-        const updated = [...curr.slice(-5), { name: label, moisture: next.soilMoisture }];
-        // fill empty labels if any
-        return updated.map((d, i) => ({ ...d, name: d.name || (i === updated.length - 1 ? label : "") }));
-      });
+  // Add new crop
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Submit clicked ✅", newCrop);
 
-      prevRef.current = sensor;
-    }, 5000);
+    if (!newCrop.name || !newCrop.type || !newCrop.price) {
+      alert("Please fill all required fields");
+      return;
+    }
 
-    return () => clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sensor]); // use current values as baseline for small drift
+    const cropData = {
+        ...newCrop,
+        farmerId: farmerInfo?.id,
+    };
 
-  const prev = prevRef.current;
+    fetch("http://localhost:3001/crops", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cropData),
+    })
+      .then((res) => res.json())
+      .then(() => {
+        alert("Crop added successfully!");
+        setNewCrop({
+          name: "",
+          type: "",
+          price: "",
+          region: farmerInfo?.city || "",
+          contact: farmerInfo?.contact || "",
+          image: "",
+          farmer: farmerInfo?.name || "Unknown Farmer",
+          farmName: farmerInfo?.farmName || "",
+        });
+        setShowForm(false);
+        fetchCrops();
+      })
+      .catch((err) => console.error("Error adding crop:", err));
+  };
+
+  // Delete crop
+  const handleDelete = (id) => {
+    if (!window.confirm("Are you sure you want to delete this crop?")) return;
+    fetch(`http://localhost:3001/crops/${id}`, { method: "DELETE" })
+      .then(() => fetchCrops())
+      .catch((err) => console.error("Error deleting crop:", err));
+  };
+
+  // Edit crop
+  const handleEdit = (crop) => {
+    setCropToEdit({ ...crop });
+    setShowEditModal(true);
+  };
+  const handleUpdate = (e) => {
+    e.preventDefault();
+    fetch(`http://localhost:3001/crops/${cropToEdit.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cropToEdit),
+    })
+      .then(() => {
+        alert("Crop updated successfully!");
+        setShowEditModal(false);
+        fetchCrops();
+      })
+      .catch((err) => console.error("Error updating crop:", err));
+  };
+
+  // Simulate sensor readings
+useEffect(() => {
+  const interval = setInterval(() => {
+    setHumidity((h) => Math.max(30, Math.min(70, h + (Math.random() * 4 - 2))));
+    setTemperature((t) => Math.max(20, Math.min(35, t + (Math.random() * 2 - 1))));
+    setLastUpdated(new Date().toLocaleString()); // update time
+  }, 60000); // update every 1 minute
+  return () => clearInterval(interval);
+}, []);
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-green-700 text-white p-6 flex flex-col gap-4">
-        <h1 className="text-2xl font-bold mb-4">Ghirass</h1>
-        <nav className="flex flex-col gap-3">
-          <a href="#!" className="hover:bg-green-600 p-2 rounded">Dashboard</a>
-          <a href="#!" className="hover:bg-green-600 p-2 rounded">Sensor Data</a>
-          <a href="#!" className="hover:bg-green-600 p-2 rounded">Irrigation</a>
-          <a href="#!" className="hover:bg-green-600 p-2 rounded">Pest Alerts</a>
-          <a href="#!" className="hover:bg-green-600 p-2 rounded">Marketplace</a>
-        </nav>
+    <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6 transition-all duration-300">
+      <h1 className="text-3xl font-semibold text-[#3e5e40]">Farmer Dashboard</h1>
+
+      {farmerInfo && (
+        <p className="text-gray-600 mb-4">
+            Welcome, <span className="font-semibold text-[#3e5e40]">{farmerInfo.name}</span> from {farmerInfo.city || "your farm"} 🌿
+        </p>
+      )}
+
+
+      <p className="text-sm text-gray-500">Last Updated: {lastUpdated}</p>
+      
+{/* Environment Data Cards */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
+  <div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] text-center">
+    <h3 className="text-gray-600 text-sm font-medium">Temperature</h3>
+    <p className="text-3xl font-semibold text-[#3e5e40] mt-2">
+      {temperature.toFixed(1)}°C{" "}
+      <span className="text-sm">
+        {temperature > 30 ? "↓" : "↑"}
+      </span>
+    </p>
+    <p className="text-gray-500 text-xs mt-1">Range 20–35°C</p>
+  </div>
+
+  <div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] text-center">
+    <h3 className="text-gray-600 text-sm font-medium">Humidity</h3>
+    <p className="text-3xl font-semibold text-[#3e5e40] mt-2">
+      {humidity.toFixed(0)}%{" "}
+      <span className="text-sm">
+        {humidity > 60 ? "↑" : "↓"}
+      </span>
+    </p>
+    <p className="text-gray-500 text-xs mt-1">Range 40–75%</p>
+  </div>
+
+  <div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] text-center">
+    <h3 className="text-gray-600 text-sm font-medium">Soil Moisture</h3>
+    <p className="text-3xl font-semibold text-[#3e5e40] mt-2">
+      {humidity.toFixed(0) - 28}%{" "}
+      <span className="text-sm">
+        {humidity > 50 ? "↑" : "↓"}
+      </span>
+    </p>
+    <p className="text-gray-500 text-xs mt-1">Range 30–65%</p>
+  </div>
+</div>
+
+{/* Irrigation Control Section */}
+<div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] mt-6 flex justify-between items-center">
+  <div>
+    <h3 className="text-gray-700 font-medium">Irrigation Control</h3>
+    <p
+      className={`text-sm font-semibold ${
+        isManualMode ? "text-[#8b7f6b]" : "text-[#3e5e40]"
+      }`}
+    >
+      {isManualMode ? "Manual Mode (Active)" : "Automatic Mode"}
+    </p>
+  </div>
+  <button
+    onClick={() => setIsManualMode(!isManualMode)}
+    className={`px-4 py-2 rounded-lg text-white font-medium transition-all duration-200 ${
+      isManualMode
+        ? "bg-[#a6b39f] hover:bg-[#93a58b]" // pastel sage gray
+        : "bg-[#8fae8d] hover:bg-[#7da07b]" // soft green
+    }`}
+  >
+    {isManualMode ? "Switch to Auto" : "Manual Override"}
+  </button>
+</div>
+
+{/* Irrigation Status Section */}
+<div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] mt-3">
+  <h3 className="text-gray-700 font-medium mb-1">Irrigation Status</h3>
+  <p
+    className={`text-sm font-semibold ${
+      isManualMode ? "text-[#8b7f6b]" : "text-[#3e5e40]"
+    }`}
+  >
+    {isManualMode
+      ? "Manual irrigation active — system control disabled"
+      : "Automatic irrigation mode enabled"}
+  </p>
+</div>
+
+
+      {/* Humidity chart */}
+      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Humidity History</h2>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={data}>
+            <XAxis dataKey="day" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="humidity" fill="#8fae8d" />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col">
-        {/* Navbar */}
-        <header className="bg-white shadow p-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-700">Farmer Dashboard</h2>
-          <div className="text-gray-500">Welcome, Basmah</div>
-        </header>
-
-        {/* Content */}
-        <main className="p-6 space-y-6 overflow-y-auto">
-          {/* Sensor cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl shadow p-4 transition-colors">
-              <h3 className="text-lg font-semibold">Temperature</h3>
-              <p className="text-2xl text-green-700 flex items-baseline">
-                {sensor.temperature.toFixed(1)}°C
-                <Trend value={sensor.temperature} prev={prev.temperature} />
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Range 20–35°C</p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow p-4 transition-colors">
-              <h3 className="text-lg font-semibold">Humidity</h3>
-              <p className="text-2xl text-green-700 flex items-baseline">
-                {sensor.humidity.toFixed(0)}%
-                <Trend value={sensor.humidity} prev={prev.humidity} />
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Range 40–75%</p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow p-4 transition-colors">
-              <h3 className="text-lg font-semibold">Soil Moisture</h3>
-              <p className="text-2xl text-green-700 flex items-baseline">
-                {sensor.soilMoisture.toFixed(0)}%
-                <Trend value={sensor.soilMoisture} prev={prev.soilMoisture} />
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Range 30–65%</p>
-            </div>
-          </div>
-
-          {/* LOW SOIL MOISTURE ALERT */}
-          {sensor.soilMoisture < 35 && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-                <p className="text-red-800 font-medium">
-                  Low soil moisture detected ({sensor.soilMoisture.toFixed(0)}%)
-                </p>
-                <p className="text-red-700 text-sm">
-                    Recommendation: Start a short irrigation cycle or increase automatic threshold.
-                </p>
-            </div>
+      {/* Pest alerts */}
+      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Pest Alerts</h2>
+        {alerts.length === 0 ? (
+          <p className="text-gray-500 italic">No alerts at the moment.</p>
+        ) : (
+          <ul className="space-y-2">
+            {alerts.map((alert) => (
+              <li key={alert.id} className="border-l-4 border-red-500 pl-3 text-gray-700">
+                <strong>{alert.date}:</strong> {alert.message}
+              </li>
+            ))}
+          </ul>
         )}
-
-        {/* Manual Override Section */}
-        <ManualOverride onStatusChange={setIrrigationStatus} />
-
-
-
-
-
-
-          {/* Irrigation status */}
-          <div className="bg-white rounded-xl shadow p-4 flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold">Irrigation Status</h3>
-              <p className="text-xl text-green-700">{sensor.irrigationStatus}</p>
-              <p
-              className={`text-xl font-medium ${
-                irrigationStatus === "Manual" ? "text-orange-600" : "text-green-700"
-                }`}
-              >
-                  {irrigationStatus} Mode
-              </p>
-
-            </div>
-            <button className="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800">
-              Manual Override
-            </button>
-          </div>
-
-          {/* Soil moisture chart */}
-          <div className="bg-white rounded-xl shadow p-4">
-            <h3 className="text-lg font-semibold mb-2">Soil Moisture Trend</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={series}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="moisture" fill="#16a34a" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-
-          <PestAlerts />
-
-
-          {/* Listings */}
-          <div className="bg-white rounded-xl shadow p-4">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-semibold">My Crop Listings</h3>
-              <button className="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800">
-                Add New
-              </button>
-            </div>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b">
-                  <th className="p-2">Name</th>
-                  <th className="p-2">Status</th>
-                  <th className="p-2">Price</th>
-                  <th className="p-2">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cropListings.map((crop) => (
-                  <tr key={crop.id} className="border-b hover:bg-gray-100">
-                    <td className="p-2">{crop.name}</td>
-                    <td className="p-2">{crop.status}</td>
-                    <td className="p-2">{crop.price}</td>
-                    <td className="p-2">{crop.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </main>
       </div>
+
+      {/* Crop management */}
+      <div className="bg-white p-4 rounded-xl shadow border border-[#e0e6dc] flex items-center justify-between">
+        <p className="text-gray-700 font-medium">Manage your farm crops</p>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-2 bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition-all duration-300"
+        >
+          <PlusCircle size={18} />
+          {showForm ? "Close" : "Add Crop"}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 relative">
+            <div className="col-span-2 relative">
+              <input
+                type="text"
+                placeholder="Crop Name"
+                value={newCrop.name}
+                onChange={handleNameChange}
+                className="border rounded-lg p-2 w-full"
+                required
+              />
+              {suggestions.length > 0 && (
+                <ul className="absolute left-0 right-0 bg-white border rounded-lg shadow mt-1 z-10">
+                  {suggestions.map((s, i) => (
+                    <li
+                      key={i}
+                      onClick={() => handleSelectName(s)}
+                      className="px-3 py-1 hover:bg-[#e8ede4] cursor-pointer text-gray-700"
+                    >
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <select
+              value={newCrop.type}
+              onChange={(e) => setNewCrop({ ...newCrop, type: e.target.value })}
+              className="border rounded-lg p-2 bg-white"
+              required
+            >
+              <option value="">Select Type</option>
+              <option value="Vegetable">Vegetable</option>
+              <option value="Fruit">Fruit</option>
+            </select>
+            <input
+              type="number"
+              placeholder="Price (SAR)"
+              value={newCrop.price}
+              onChange={(e) => setNewCrop({ ...newCrop, price: e.target.value })}
+              className="border rounded-lg p-2"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Region / City"
+              value={newCrop.region}
+              onChange={(e) => setNewCrop({ ...newCrop, region: e.target.value })}
+              className="border rounded-lg p-2"
+            />
+            <input
+              type="text"
+              placeholder="Contact Number"
+              value={newCrop.contact}
+              onChange={(e) => setNewCrop({ ...newCrop, contact: e.target.value })}
+              className="border rounded-lg p-2"
+            />
+            <button
+              type="submit"
+              className="col-span-2 bg-[#8fae8d] hover:bg-[#7da07b] text-white py-2 rounded-lg transition-all duration-200"
+            >
+              Save Crop
+            </button>
+          </form>
+        </div>
+      )}
+
+      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">My Crops</h2>
+        {myCrops.length === 0 ? (
+          <p className="text-gray-500 italic">No crops added yet.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {myCrops.map((crop) => (
+              <div
+                key={crop.id}
+                className="bg-[#f9faf8] rounded-xl shadow-sm p-3 border border-[#e0e6dc] hover:shadow-md transition-all relative"
+              >
+                <img
+                  src={crop.image}
+                  alt={crop.name}
+                  className="w-full h-28 object-cover rounded-md mb-2"
+                />
+                <h3 className="font-semibold text-[#3e5e40]">{crop.name}</h3>
+                <p className="text-gray-600 text-sm">{crop.type}</p>
+                <p className="text-[#678a66] text-sm font-medium">
+                  {crop.price} SAR/kg
+                </p>
+                <div className="flex justify-end gap-2 mt-2">
+                  <button
+                    onClick={() => handleEdit(crop)}
+                    className="text-sm text-blue-700 hover:underline flex items-center gap-1"
+                  >
+                    <Edit2 size={14} /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(crop.id)}
+                    className="text-sm text-red-600 hover:underline flex items-center gap-1"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Edit Crop Modal */}
+      {showEditModal && cropToEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96 relative">
+            <button
+              onClick={() => setShowEditModal(false)}
+              className="absolute top-2 right-2 text-gray-600 hover:text-black"
+            >
+              <X size={18} />
+            </button>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Edit Crop</h2>
+            <form onSubmit={handleUpdate} className="space-y-3">
+              <input
+                type="text"
+                value={cropToEdit.name}
+                onChange={(e) => setCropToEdit({ ...cropToEdit, name: e.target.value })}
+                className="border p-2 rounded w-full"
+              />
+              <select
+                value={cropToEdit.type}
+                onChange={(e) => setCropToEdit({ ...cropToEdit, type: e.target.value })}
+                className="border p-2 rounded w-full bg-white"
+              >
+                <option value="Vegetable">Vegetable</option>
+                <option value="Fruit">Fruit</option>
+              </select>
+              <input
+                type="number"
+                value={cropToEdit.price}
+                onChange={(e) => setCropToEdit({ ...cropToEdit, price: e.target.value })}
+                className="border p-2 rounded w-full"
+              />
+              <input
+                type="text"
+                value={cropToEdit.region}
+                onChange={(e) => setCropToEdit({ ...cropToEdit, region: e.target.value })}
+                className="border p-2 rounded w-full"
+              />
+              <input
+                type="text"
+                value={cropToEdit.contact}
+                onChange={(e) => setCropToEdit({ ...cropToEdit, contact: e.target.value })}
+                className="border p-2 rounded w-full"
+              />
+              <button
+                type="submit"
+                className="w-full bg-[#8fae8d] hover:bg-[#7da07b] text-white py-2 rounded-lg transition-all duration-200"
+              >
+                Save Changes
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
