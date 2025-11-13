@@ -42,7 +42,6 @@ function timeAgo(iso) {
 
 export default function PestAlerts() {
 
-      // NEW: دالة تصدير التنبيهات إلى CSV
   const exportCSV = () => {
     const rows = [
       ["id","pest","severity","recommendation","timestamp","read"],
