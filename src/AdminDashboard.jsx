@@ -21,6 +21,17 @@ export default function AdminDashboard() {
     contact: ""
   });
 
+  const [logs, setLogs] = useState([]);
+  const [logLevelFilter, setLogLevelFilter] = useState("All");
+
+  // Fetch logs from API
+  useEffect(() => {
+    fetch("https://ghirass-api.onrender.com/logs")
+      .then((res) => res.json())
+      .then((data) => setLogs(data))
+      .catch((err) => console.error("Error fetching logs:", err));
+  }, []);
+
 
   // Fetch farmers and crops
   useEffect(() => {
@@ -93,6 +104,11 @@ const handleDeleteUser = (id) => {
     .then(() => window.location.reload())
     .catch((err) => console.error("Error deleting user:", err));
 };
+
+const filteredLogs =
+  logLevelFilter === "All"
+    ? logs
+    : logs.filter((log) => log.level === logLevelFilter);
 
 
   return (
@@ -363,8 +379,67 @@ const handleDeleteUser = (id) => {
         </div>
       </div>
     )}
+
+    
   </div>
 )}
+
+{activeTab === "logs" && (
+  <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-xl font-semibold text-gray-800">
+        Security Logs
+      </h2>
+
+      <select
+        value={logLevelFilter}
+        onChange={(e) => setLogLevelFilter(e.target.value)}
+        className="border rounded-lg px-3 py-2 bg-white text-sm"
+      >
+        <option value="All">All Levels</option>
+        <option value="Info">Info</option>
+        <option value="Warning">Warning</option>
+        <option value="Error">Error</option>
+      </select>
+    </div>
+
+    {filteredLogs.length === 0 ? (
+      <p className="text-gray-500 italic">No logs found.</p>
+    ) : (
+      <table className="w-full border-collapse text-left text-sm">
+        <thead>
+          <tr className="border-b">
+            <th className="p-2">Time</th>
+            <th className="p-2">User</th>
+            <th className="p-2">Action</th>
+            <th className="p-2">Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredLogs.map((log) => (
+            <tr key={log.id} className="border-b hover:bg-[#f6f7f3]">
+              <td className="p-2">{log.time}</td>
+              <td className="p-2">{log.user}</td>
+              <td className="p-2">{log.action}</td>
+              <td
+                className={`p-2 font-medium ${
+                  log.level === "Error"
+                    ? "text-red-600"
+                    : log.level === "Warning"
+                    ? "text-yellow-700"
+                    : "text-gray-700"
+                }`}
+              >
+                {log.level}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </div>
+)}
+
 
     </div>
   );
