@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { writeLog } from "./utils/logger";
+
 
 export default function FarmerLogin() {
   const navigate = useNavigate();
@@ -74,8 +76,19 @@ export default function FarmerLogin() {
           localStorage.setItem("farmerData", JSON.stringify(data[0]));
           alert(`Welcome back, ${data[0].name}!`);
           navigate("/farmer");
+          writeLog(
+    `Farmer login success: ${data[0].username}`,
+  "Info",
+  data[0].username
+);
+
         } else {
           alert("Invalid username or password.");
+          writeLog(
+  `Failed farmer login attempt: ${farmerData.username}`,
+  "Warning"
+);
+
         }
       })
       .catch((err) => console.error("Error logging in:", err));
