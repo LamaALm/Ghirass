@@ -105,6 +105,31 @@ const handleDeleteUser = (id) => {
     .catch((err) => console.error("Error deleting user:", err));
 };
 
+// Admin Maintenance Actions (Simulated but realistic)
+const handleBackup = () => {
+  const timestamp = new Date().toLocaleString();
+  alert(`Backup started at ${timestamp}.\nA database snapshot was (theoretically) created.`);
+
+  // Log the action
+  writeLog("Admin triggered BACKUP", "Info", "Admin");
+};
+
+const handleRestore = () => {
+  const timestamp = new Date().toLocaleString();
+  alert(`Restore initialized at ${timestamp}.\nSystem would load the last backup snapshot.`);
+
+  // Log the action
+  writeLog("Admin triggered RESTORE", "Warning", "Admin");
+};
+
+const handleIntegrityCheck = () => {
+  alert("Integrity Check Complete.\nAll references and structures look valid.");
+
+  // Log the action
+  writeLog("Admin ran INTEGRITY CHECK", "Info", "Admin");
+};
+
+
 const filteredLogs =
   logLevelFilter === "All"
     ? logs
@@ -437,6 +462,62 @@ const filteredLogs =
         </tbody>
       </table>
     )}
+
+    {activeTab === "maintenance" && (
+  <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] space-y-6">
+    <h2 className="text-xl font-semibold text-gray-800">System Maintenance</h2>
+    <p className="text-gray-600 text-sm">
+      These maintenance tools simulate real administrative operations as described in the design document.
+    </p>
+
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+      {/* Backup Card */}
+      <div className="border border-[#e0e6dc] rounded-xl p-5 bg-[#f9faf8]">
+        <h3 className="font-semibold text-[#3e5e40] mb-2">Backup Database</h3>
+        <p className="text-sm text-gray-600 mb-3">
+          Creates a snapshot of the current database state for recovery.
+        </p>
+        <button
+          onClick={handleBackup}
+          className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg text-sm"
+        >
+          Run Backup
+        </button>
+      </div>
+
+      {/* Restore Card */}
+      <div className="border border-[#e0e6dc] rounded-xl p-5 bg-[#f9faf8]">
+        <h3 className="font-semibold text-[#3e5e40] mb-2">Restore Backup</h3>
+        <p className="text-sm text-gray-600 mb-3">
+          Loads the latest backup snapshot in case of system failure.
+        </p>
+        <button
+          onClick={handleRestore}
+          className="bg-[#e0b28e] hover:bg-[#d79d70] text-white px-4 py-2 rounded-lg text-sm"
+        >
+          Restore
+        </button>
+      </div>
+
+      {/* Integrity Check Card */}
+      <div className="border border-[#e0e6dc] rounded-xl p-5 bg-[#f9faf8]">
+        <h3 className="font-semibold text-[#3e5e40] mb-2">Integrity Check</h3>
+        <p className="text-sm text-gray-600 mb-3">
+          Verifies that all database references and structures are valid.
+        </p>
+        <button
+          onClick={handleIntegrityCheck}
+          className="bg-[#8f9fae] hover:bg-[#7b8a98] text-white px-4 py-2 rounded-lg text-sm"
+        >
+          Run Check
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+ 
   </div>
 )}
 
