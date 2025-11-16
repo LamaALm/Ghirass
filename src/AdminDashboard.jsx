@@ -462,6 +462,9 @@ const filteredLogs =
         </tbody>
       </table>
     )}
+ 
+  </div>
+)}
 
     {activeTab === "maintenance" && (
   <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] space-y-6">
@@ -515,9 +518,6 @@ const filteredLogs =
       </div>
 
     </div>
-  </div>
-)}
- 
   </div>
 )}
 
