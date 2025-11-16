@@ -9,6 +9,17 @@ import {
   Settings,
   AlertTriangle,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie
+} from "recharts";
+
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -68,8 +79,31 @@ export default function AdminDashboard() {
     { id: "maintenance", label: "Maintenance", icon: <Settings size={16} /> },
   ];
 
+  // Count crops per city
+const cityCounts = crops.reduce((acc, crop) => {
+  acc[crop.region] = (acc[crop.region] || 0) + 1;
+  return acc;
+}, {});
+
+const barChartData = Object.entries(cityCounts).map(([city, count]) => ({
+  city,
+  count,
+}));
+
+// Count crop types (Vegetable/Fruit)
+const typeCounts = crops.reduce((acc, crop) => {
+  acc[crop.type] = (acc[crop.type] || 0) + 1;
+  return acc;
+}, {});
+
+const pieChartData = Object.entries(typeCounts).map(([type, count]) => ({
+  name: type,
+  value: count,
+}));
+
+
   return (
-    <div className="max-w-6xl mx-auto mt-10 space-y-6 p-4">
+    <div className="w-full px-10 mt-10 space-y-8">
 
       {/* Header */}
       <div>
@@ -98,31 +132,86 @@ export default function AdminDashboard() {
       </div>
 
       {/* Overview */}
-      {activeTab === "overview" && (
-        <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">System Overview</h2>
+{activeTab === "overview" && (
+  <div className="space-y-8">
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {/* Farmers total */}
-            <div className="p-5 bg-[#f9faf8] border rounded-xl text-center">
-              <h3 className="text-sm text-gray-600">Total Farmers</h3>
-              <p className="text-3xl font-bold text-[#3e5e40]">{farmers.length}</p>
-            </div>
+    {/* Stats Boxes */}
+    <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
 
-            {/* Crops total */}
-            <div className="p-5 bg-[#f9faf8] border rounded-xl text-center">
-              <h3 className="text-sm text-gray-600">Total Crops Listed</h3>
-              <p className="text-3xl font-bold text-[#3e5e40]">{crops.length}</p>
-            </div>
+      {/* Total Farmers */}
+      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] text-center">
+        <h3 className="text-sm text-gray-600 mb-1">Total Farmers</h3>
+        <p className="text-3xl font-bold text-[#3e5e40]">{farmers.length}</p>
+      </div>
 
-            {/* Users total */}
-            <div className="p-5 bg-[#f9faf8] border rounded-xl text-center">
-              <h3 className="text-sm text-gray-600">System Users</h3>
-              <p className="text-3xl font-bold text-[#3e5e40]">{users.length}</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Total Crops */}
+      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] text-center">
+        <h3 className="text-sm text-gray-600 mb-1">Total Crops Listed</h3>
+        <p className="text-3xl font-bold text-[#3e5e40]">{crops.length}</p>
+      </div>
+
+      {/* Top City */}
+      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] text-center">
+        <h3 className="text-sm text-gray-600 mb-1">Top City</h3>
+        <p className="text-2xl font-semibold text-[#3e5e40]">
+          {barChartData.length ? barChartData[0].city : "—"}
+        </p>
+      </div>
+
+      {/* System Users */}
+      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] text-center">
+        <h3 className="text-sm text-gray-600 mb-1">System Users</h3>
+        <p className="text-3xl font-bold text-[#3e5e40]">{users.length}</p>
+      </div>
+    </div>
+
+    {/* Charts */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      {/* City Distribution Bar Chart */}
+      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">
+          Crop Distribution by City
+        </h3>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={barChartData}>
+            <XAxis dataKey="city" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="count" fill="#8fae8d" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Crop Type Pie Chart */}
+      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">
+          Crop Type Distribution
+        </h3>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={pieChartData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={40}
+              outerRadius={90}
+              fill="#8fae8d"
+              label
+            />
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+
+  </div>
+)}
+
 
       {/* Farmers Table */}
       {activeTab === "farmers" && (
