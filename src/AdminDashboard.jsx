@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { writeLog } from "./utils/logger";
+
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
