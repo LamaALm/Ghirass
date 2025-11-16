@@ -17,8 +17,10 @@ import {
   Tooltip,
   ResponsiveContainer,
   PieChart,
-  Pie
+  Pie,
+  Cell
 } from "recharts";
+
 
 
 export default function AdminDashboard() {
@@ -96,10 +98,11 @@ const typeCounts = crops.reduce((acc, crop) => {
   return acc;
 }, {});
 
-const pieChartData = Object.entries(typeCounts).map(([type, count]) => ({
-  name: type,
-  value: count,
-}));
+const pieChartData = [
+  { type: "Vegetable", value: crops.filter(c => c.type === "Vegetable").length },
+  { type: "Fruit", value: crops.filter(c => c.type === "Fruit").length },
+];
+
 
 
   return (
@@ -133,82 +136,74 @@ const pieChartData = Object.entries(typeCounts).map(([type, count]) => ({
 
       {/* Overview */}
 {activeTab === "overview" && (
-  <div className="space-y-8">
+  <div className="w-full flex gap-6 mt-6">
 
-    {/* Stats Boxes */}
-    <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-
-      {/* Total Farmers */}
-      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] text-center">
-        <h3 className="text-sm text-gray-600 mb-1">Total Farmers</h3>
-        <p className="text-3xl font-bold text-[#3e5e40]">{farmers.length}</p>
+    {/* Left Column – Stats */}
+    <div className="w-1/4 space-y-4">
+      <div className="bg-white rounded-xl shadow border border-[#e0e6dc] p-4">
+        <h3 className="text-gray-600 text-sm">Total Farmers</h3>
+        <p className="text-3xl font-semibold text-[#3e5e40] mt-1">{stats.totalFarmers}</p>
       </div>
 
-      {/* Total Crops */}
-      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] text-center">
-        <h3 className="text-sm text-gray-600 mb-1">Total Crops Listed</h3>
-        <p className="text-3xl font-bold text-[#3e5e40]">{crops.length}</p>
+      <div className="bg-white rounded-xl shadow border border-[#e0e6dc] p-4">
+        <h3 className="text-gray-600 text-sm">Total Crops Listed</h3>
+        <p className="text-3xl font-semibold text-[#3e5e40] mt-1">{stats.totalCrops}</p>
       </div>
 
-      {/* Top City */}
-      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] text-center">
-        <h3 className="text-sm text-gray-600 mb-1">Top City</h3>
-        <p className="text-2xl font-semibold text-[#3e5e40]">
-          {barChartData.length ? barChartData[0].city : "—"}
+      <div className="bg-white rounded-xl shadow border border-[#e0e6dc] p-4">
+        <h3 className="text-gray-600 text-sm">System Users</h3>
+        <p className="text-3xl font-semibold text-[#3e5e40] mt-1">{stats.totalUsers}</p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow border border-[#e0e6dc] p-4">
+        <h3 className="text-gray-600 text-sm">Top City</h3>
+        <p className="text-2xl font-semibold text-[#3e5e40] mt-1">
+          {stats.topCity || "-"}
         </p>
-      </div>
-
-      {/* System Users */}
-      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] text-center">
-        <h3 className="text-sm text-gray-600 mb-1">System Users</h3>
-        <p className="text-3xl font-bold text-[#3e5e40]">{users.length}</p>
       </div>
     </div>
 
-    {/* Charts */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    {/* Right Column – Charts */}
+    <div className="w-3/4 space-y-6">
 
-      {/* City Distribution Bar Chart */}
-      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">
-          Crop Distribution by City
-        </h3>
-
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={barChartData}>
+      {/* Bar Chart – Cities */}
+      <div className="bg-white rounded-xl shadow border border-[#e0e6dc] p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Crop Distribution by City</h3>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={chartData}>
             <XAxis dataKey="city" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="count" fill="#8fae8d" />
+            <Bar dataKey="count" fill="#8FAE8D" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Crop Type Pie Chart */}
-      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">
-          Crop Type Distribution
-        </h3>
-
-        <ResponsiveContainer width="100%" height={300}>
+      {/* Pie Chart – Crop Types */}
+      <div className="bg-white rounded-xl shadow border border-[#e0e6dc] p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Crops by Type</h3>
+        <ResponsiveContainer width="100%" height={260}>
           <PieChart>
             <Pie
               data={pieChartData}
               dataKey="value"
-              nameKey="name"
+              nameKey="type"
               cx="50%"
               cy="50%"
-              innerRadius={40}
               outerRadius={90}
-              fill="#8fae8d"
               label
-            />
+            >
+              <Cell fill="#8FAE8D" />
+              <Cell fill="#B7C9A9" />
+              <Cell fill="#D7D7D7" />
+              <Cell fill="#E8E2D0" />
+            </Pie>
             <Tooltip />
           </PieChart>
         </ResponsiveContainer>
       </div>
-    </div>
 
+    </div>
   </div>
 )}
 
