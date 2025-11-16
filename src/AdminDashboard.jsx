@@ -16,6 +16,15 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [logs, setLogs] = useState([]);
 
+  // Fetch security logs from backend (REAL logs)
+useEffect(() => {
+  fetch("https://ghirass-api.onrender.com/logs")
+    .then((res) => res.json())
+    .then((data) => setLogs(data))
+    .catch((err) => console.error("Error fetching logs:", err));
+}, []);
+
+
   // ====== Fetch Farmers & Crops ======
   useEffect(() => {
     Promise.all([

@@ -8,6 +8,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { PlusCircle, Edit2, Trash2, X } from "lucide-react";
+import { writeLog } from "./utils/logger";
+
 
 export default function FarmerDashboard() {
 
@@ -136,17 +138,30 @@ export default function FarmerDashboard() {
         });
         setShowForm(false);
         fetchCrops();
+        writeLog(farmerInfo.username, `Added new crop: ${newCrop.name}`, "Info");
       })
+
       .catch((err) => console.error("Error adding crop:", err));
   };
 
   // Delete crop
   const handleDelete = (id) => {
-    if (!window.confirm("Are you sure you want to delete this crop?")) return;
-    fetch(`https://ghirass-api.onrender.com/crops/${id}`, { method: "DELETE" })
-      .then(() => fetchCrops())
-      .catch((err) => console.error("Error deleting crop:", err));
-  };
+  if (!window.confirm("Are you sure you want to delete this crop?")) return;
+
+  fetch(`https://ghirass-api.onrender.com/crops/${id}`, {
+    method: "DELETE",
+  })
+    .then(() => {
+      writeLog(
+        farmerInfo.username,
+        `Deleted crop with ID: ${id}`,
+        "Warning"
+      );
+      fetchCrops();
+    })
+    .catch((err) => console.error("Error deleting crop:", err));
+};
+
 
   // Edit crop
   const handleEdit = (crop) => {
@@ -164,6 +179,8 @@ export default function FarmerDashboard() {
         alert("Crop updated successfully!");
         setShowEditModal(false);
         fetchCrops();
+        writeLog(farmerInfo.username, `Updated crop: ${cropToEdit.name}`, "Info");
+
       })
       .catch((err) => console.error("Error updating crop:", err));
   };

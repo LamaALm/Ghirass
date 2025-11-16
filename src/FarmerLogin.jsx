@@ -76,18 +76,13 @@ export default function FarmerLogin() {
           localStorage.setItem("farmerData", JSON.stringify(data[0]));
           alert(`Welcome back, ${data[0].name}!`);
           navigate("/farmer");
-          writeLog(
-    `Farmer login success: ${data[0].username}`,
-  "Info",
-  data[0].username
-);
+writeLog(data[0].username, "Farmer login success", "Info");
+
 
         } else {
           alert("Invalid username or password.");
-          writeLog(
-  `Failed farmer login attempt: ${farmerData.username}`,
-  "Warning"
-);
+writeLog(farmerData.username, "Failed farmer login attempt", "Warning");
+
 
         }
       })

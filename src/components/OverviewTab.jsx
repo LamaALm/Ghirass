@@ -7,8 +7,10 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  Legend,        // ← أضفنا Legend
 } from "recharts";
+
 
 export default function OverviewTab({ stats, chartData, pieChartData }) {
   return (
@@ -53,23 +55,36 @@ export default function OverviewTab({ stats, chartData, pieChartData }) {
         </div>
 
         {/* Pie Chart */}
-        <div className="bg-white shadow rounded-xl border border-[#e0e6dc] p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-700">Crops by Type</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie data={pieChartData} dataKey="value" nameKey="type" cx="50%" cy="50%" outerRadius={90}>
-                <Cell fill="#8FAE8D" />
-                <Cell fill="#B7C9A9" />
-                <Cell fill="#D7D7D7" />
-                <Cell fill="#E8E2D0" />
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+<div className="bg-white shadow rounded-xl border border-[#e0e6dc] p-6">
+  <h3 className="text-lg font-semibold mb-4 text-gray-700">
+    Crops by Type
+  </h3>
+  <ResponsiveContainer width="100%" height={260}>
+    <PieChart>
+      <Pie
+        data={pieChartData}
+        dataKey="value"
+        nameKey="type"
+        cx="50%"
+        cy="50%"
+        outerRadius={90}
+        label={({ name, value, percent }) =>
+          `${name} ${Math.round(percent * 100)}% (${value})`
+        }
+      >
+        <Cell fill="#8FAE8D" />  {/* Vegetables */}
+        <Cell fill="#B7C9A9" />  {/* Fruits */}
+      </Pie>
+      <Tooltip />
+      <Legend />
+    </PieChart>
+  </ResponsiveContainer>
+</div>
+
 
       </div>
 
     </div>
   );
 }
+
