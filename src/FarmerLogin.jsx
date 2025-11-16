@@ -56,6 +56,18 @@ export default function FarmerLogin() {
     })
       .then((res) => res.json())
       .then((data) => {
+        // Add farmer to users table as well
+fetch("https://ghirass-api.onrender.com/users", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: farmerData.name,
+    username: farmerData.username,
+    city: farmerData.city,
+    role: "Farmer"
+  })
+});
+
         alert("Account created successfully! You can now log in.");
         setIsLoginMode(true); // switch to login
       })
