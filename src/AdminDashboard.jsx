@@ -108,7 +108,10 @@ useEffect(() => {
 
         {activeTab === "crops" && <CropsTab crops={crops} />}
 
-        {activeTab === "users" && <UsersTab users={users} />}
+        {activeTab === "users" && (
+          <UsersTab users={users} setUsers={setUsers} />
+        )}
+
 
         {activeTab === "logs" && <LogsTab logs={filteredLogs} />}
 
