@@ -1,228 +1,147 @@
 import React, { useState, useEffect } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { writeLog } from "./utils/logger";
-
+import {
+  Users,
+  Home,
+  Leaf,
+  Database,
+  ListTree,
+  Settings,
+  AlertTriangle,
+} from "lucide-react";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
+
   const [farmers, setFarmers] = useState([]);
   const [crops, setCrops] = useState([]);
-  const [stats, setStats] = useState({ totalFarmers: 0, totalCrops: 0, topCity: "-" });
-  const [chartData, setChartData] = useState([]);
-  // USER MANAGEMENT STATES
   const [users, setUsers] = useState([]);
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [editUser, setEditUser] = useState(null);
-
-  const [userForm, setUserForm] = useState({
-    name: "",
-    username: "",
-    password: "",
-    role: "",
-    city: "",
-    contact: ""
-  });
-
   const [logs, setLogs] = useState([]);
   const [logLevelFilter, setLogLevelFilter] = useState("All");
 
-  // Fetch logs from API
-  useEffect(() => {
-    fetch("https://ghirass-api.onrender.com/logs")
-      .then((res) => res.json())
-      .then((data) => setLogs(data))
-      .catch((err) => console.error("Error fetching logs:", err));
-  }, []);
-
-
-  // Fetch farmers and crops
+  // Fetch data from API
   useEffect(() => {
     Promise.all([
       fetch("https://ghirass-api.onrender.com/farmers").then((res) => res.json()),
       fetch("https://ghirass-api.onrender.com/crops").then((res) => res.json()),
+      fetch("https://ghirass-api.onrender.com/users").then((res) => res.json()),
+      fetch("https://ghirass-api.onrender.com/logs").then((res) => res.json()),
     ])
-      .then(([farmersData, cropsData]) => {
+      .then(([farmersData, cropsData, usersData, logsData]) => {
         setFarmers(farmersData);
         setCrops(cropsData);
-        const cities = {};
-        cropsData.forEach((crop) => {
-          const city = crop.region || "Unknown";
-          cities[city] = (cities[city] || 0) + 1;
-        });
-        const sortedCities = Object.entries(cities).sort((a, b) => b[1] - a[1]);
-        setStats({
-          totalFarmers: farmersData.length,
-          totalCrops: cropsData.length,
-          topCity: sortedCities.length ? sortedCities[0][0] : "-",
-        });
-        setChartData(Object.entries(cities).map(([city, count]) => ({ city, count })));
+        setUsers(usersData);
+        setLogs(logsData);
       })
-      .catch((err) => console.error("Error fetching data:", err));
+      .catch((err) => console.error("Error fetching admin data:", err));
   }, []);
 
-  useEffect(() => {
-    fetch("https://ghirass-api.onrender.com/users")
-      .then((res) => res.json())
-      .then((data) => setUsers(data));
-  }, []);
+  // Filter Logs
+  const filteredLogs =
+    logLevelFilter === "All"
+      ? logs
+      : logs.filter((log) => log.level === logLevelFilter);
 
-  const handleAddUser = (e) => {
-  e.preventDefault();
+  // Admin Maintenance actions
+  const handleBackup = () => {
+    writeLog("Admin triggered BACKUP", "Info", "Admin");
+    alert("Backup started successfully (simulated).");
+  };
 
-  fetch("https://ghirass-api.onrender.com/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...userForm, id: crypto.randomUUID() })
-  })
-    .then(() => {
-      setShowUserModal(false);
-      window.location.reload();
-    })
-    .catch((err) => console.error("Error adding user:", err));
-};
+  const handleRestore = () => {
+    writeLog("Admin triggered RESTORE", "Warning", "Admin");
+    alert("System restore initialized (simulated).");
+  };
 
+  const handleIntegrityCheck = () => {
+    writeLog("Admin ran INTEGRITY CHECK", "Info", "Admin");
+    alert("Integrity check completed — no issues detected.");
+  };
 
-const handleUpdateUser = (e) => {
-  e.preventDefault();
-
-  fetch(`https://ghirass-api.onrender.com/users/${editUser.id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userForm)
-  })
-    .then(() => {
-      setShowUserModal(false);
-      window.location.reload();
-    })
-    .catch((err) => console.error("Error updating user:", err));
-};
-
-const handleDeleteUser = (id) => {
-  if (!window.confirm("Are you sure you want to delete this user?")) return;
-
-  fetch(`https://ghirass-api.onrender.com/users/${id}`, {
-    method: "DELETE"
-  })
-    .then(() => window.location.reload())
-    .catch((err) => console.error("Error deleting user:", err));
-};
-
-// Admin Maintenance Actions (Simulated but realistic)
-const handleBackup = () => {
-  const timestamp = new Date().toLocaleString();
-  alert(`Backup started at ${timestamp}.\nA database snapshot was (theoretically) created.`);
-
-  // Log the action
-  writeLog("Admin triggered BACKUP", "Info", "Admin");
-};
-
-const handleRestore = () => {
-  const timestamp = new Date().toLocaleString();
-  alert(`Restore initialized at ${timestamp}.\nSystem would load the last backup snapshot.`);
-
-  // Log the action
-  writeLog("Admin triggered RESTORE", "Warning", "Admin");
-};
-
-const handleIntegrityCheck = () => {
-  alert("Integrity Check Complete.\nAll references and structures look valid.");
-
-  // Log the action
-  writeLog("Admin ran INTEGRITY CHECK", "Info", "Admin");
-};
-
-
-const filteredLogs =
-  logLevelFilter === "All"
-    ? logs
-    : logs.filter((log) => log.level === logLevelFilter);
-
+  // Tabs with icons
+  const tabs = [
+    { id: "overview", label: "Overview", icon: <Home size={16} /> },
+    { id: "farmers", label: "Farmers", icon: <Leaf size={16} /> },
+    { id: "crops", label: "Crops", icon: <ListTree size={16} /> },
+    { id: "users", label: "Users", icon: <Users size={16} /> },
+    { id: "logs", label: "Security Logs", icon: <AlertTriangle size={16} /> },
+    { id: "maintenance", label: "Maintenance", icon: <Settings size={16} /> },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6 transition-all duration-300">
-      <h1 className="text-3xl font-semibold text-[#3e5e40]">Admin Dashboard</h1>
+    <div className="max-w-6xl mx-auto mt-10 space-y-6 p-4">
+
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-semibold text-[#3e5e40]">Admin Dashboard</h1>
+        <p className="text-gray-600">
+          Manage system data, monitor logs, and perform administrative maintenance.
+        </p>
+      </div>
 
       {/* Tabs */}
-      <div className="flex gap-3">
-        {["overview", "farmers", "crops", "users", "logs", "maintenance"].map((tab) => (
+      <div className="flex bg-white p-2 rounded-xl shadow border border-[#e0e6dc] w-fit gap-1">
+        {tabs.map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === tab
-                ? "bg-[#8fae8d] text-white"
-                : "bg-[#e6ece5] text-[#3e5e40] hover:bg-[#dfe5dc]"
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg font-medium transition text-sm ${
+              activeTab === tab.id
+                ? "bg-[#8fae8d] text-white shadow-sm"
+                : "bg-[#eef3ec] text-[#3e5e40] hover:bg-[#e0e7df]"
             }`}
           >
-            {tab === "logs"
-            ? "Security Logs"
-            : tab === "maintenance"
-            ? "Maintenance"
-            : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {tab.icon}
+            {tab.label}
           </button>
         ))}
       </div>
 
       {/* Overview */}
       {activeTab === "overview" && (
-        <div className="space-y-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-xl shadow border border-[#e0e6dc] text-center">
-              <h3 className="text-gray-600 text-sm">Total Farmers</h3>
-              <p className="text-3xl font-semibold text-[#3e5e40]">{stats.totalFarmers}</p>
-            </div>
-            <div className="bg-white p-4 rounded-xl shadow border border-[#e0e6dc] text-center">
-              <h3 className="text-gray-600 text-sm">Total Crops</h3>
-              <p className="text-3xl font-semibold text-[#3e5e40]">{stats.totalCrops}</p>
-            </div>
-            <div className="bg-white p-4 rounded-xl shadow border border-[#e0e6dc] text-center">
-              <h3 className="text-gray-600 text-sm">Top City</h3>
-              <p className="text-2xl font-semibold text-[#3e5e40]">{stats.topCity}</p>
-            </div>
-          </div>
+        <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">System Overview</h2>
 
-          {/* Bar Chart */}
-          <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Crop Distribution by City
-            </h2>
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <XAxis dataKey="city" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#8fae8d" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-gray-500 italic">No data available.</p>
-            )}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {/* Farmers total */}
+            <div className="p-5 bg-[#f9faf8] border rounded-xl text-center">
+              <h3 className="text-sm text-gray-600">Total Farmers</h3>
+              <p className="text-3xl font-bold text-[#3e5e40]">{farmers.length}</p>
+            </div>
+
+            {/* Crops total */}
+            <div className="p-5 bg-[#f9faf8] border rounded-xl text-center">
+              <h3 className="text-sm text-gray-600">Total Crops Listed</h3>
+              <p className="text-3xl font-bold text-[#3e5e40]">{crops.length}</p>
+            </div>
+
+            {/* Users total */}
+            <div className="p-5 bg-[#f9faf8] border rounded-xl text-center">
+              <h3 className="text-sm text-gray-600">System Users</h3>
+              <p className="text-3xl font-bold text-[#3e5e40]">{users.length}</p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Farmers */}
+      {/* Farmers Table */}
       {activeTab === "farmers" && (
-        <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] overflow-x-auto">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Farmers</h2>
-          <table className="w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="p-2">Name</th>
-                <th className="p-2">Farm Name</th>
-                <th className="p-2">City</th>
-                <th className="p-2">Contact</th>
+        <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Farmers</h2>
+          <table className="w-full border-collapse text-left text-sm bg-white rounded-xl overflow-hidden shadow-sm">
+            <thead className="bg-[#eef3ec] text-[#3e5e40]">
+              <tr>
+                <th className="p-3">Name</th>
+                <th className="p-3">City</th>
+                <th className="p-3">Contact</th>
               </tr>
             </thead>
             <tbody>
-              {farmers.map((f) => (
-                <tr key={f.id} className="border-b hover:bg-[#f6f7f3]">
-                  <td className="p-2">{f.name}</td>
-                  <td className="p-2">{f.farmName || "-"}</td>
-                  <td className="p-2">{f.city}</td>
-                  <td className="p-2">{f.contact || "-"}</td>
+              {farmers.map((farmer) => (
+                <tr key={farmer.id} className="border-t hover:bg-[#f6f7f3] transition">
+                  <td className="p-3">{farmer.name}</td>
+                  <td className="p-3">{farmer.city}</td>
+                  <td className="p-3">{farmer.contact}</td>
                 </tr>
               ))}
             </tbody>
@@ -230,28 +149,26 @@ const filteredLogs =
         </div>
       )}
 
-      {/* Crops */}
+      {/* Crops Table */}
       {activeTab === "crops" && (
-        <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] overflow-x-auto">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Crops</h2>
-          <table className="w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="p-2">Name</th>
-                <th className="p-2">Type</th>
-                <th className="p-2">Price</th>
-                <th className="p-2">Farmer</th>
-                <th className="p-2">Region</th>
+        <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Crops</h2>
+          <table className="w-full border-collapse text-left text-sm bg-white rounded-xl overflow-hidden shadow-sm">
+            <thead className="bg-[#eef3ec] text-[#3e5e40]">
+              <tr>
+                <th className="p-3">Crop</th>
+                <th className="p-3">Type</th>
+                <th className="p-3">Farmer</th>
+                <th className="p-3">City</th>
               </tr>
             </thead>
             <tbody>
-              {crops.map((c) => (
-                <tr key={c.id} className="border-b hover:bg-[#f6f7f3]">
-                  <td className="p-2">{c.name}</td>
-                  <td className="p-2">{c.type}</td>
-                  <td className="p-2">{c.price} SAR</td>
-                  <td className="p-2">{c.farmer || "-"}</td>
-                  <td className="p-2">{c.region}</td>
+              {crops.map((crop) => (
+                <tr key={crop.id} className="border-t hover:bg-[#f6f7f3] transition">
+                  <td className="p-3">{crop.name}</td>
+                  <td className="p-3">{crop.type}</td>
+                  <td className="p-3">{crop.farmer}</td>
+                  <td className="p-3">{crop.region}</td>
                 </tr>
               ))}
             </tbody>
@@ -259,270 +176,138 @@ const filteredLogs =
         </div>
       )}
 
-      {/* ===================== USER MANAGEMENT TAB ===================== */}
-{activeTab === "users" && (
-  <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-xl font-semibold text-gray-800">User Management</h2>
-      <button
-        onClick={() => {
-          setEditUser(null);
-          setShowUserModal(true);
-        }}
-        className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg"
-      >
-        + Add User
-      </button>
-    </div>
+      {/* Users Table */}
+      {activeTab === "users" && (
+        <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Users</h2>
+          <table className="w-full border-collapse text-left text-sm bg-white rounded-xl overflow-hidden shadow-sm">
+            <thead className="bg-[#eef3ec] text-[#3e5e40]">
+              <tr>
+                <th className="p-3">Username</th>
+                <th className="p-3">Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id} className="border-t hover:bg-[#f6f7f3] transition">
+                  <td className="p-3">{u.username}</td>
+                  <td className="p-3">{u.role}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-    {/* USERS TABLE */}
-    <table className="w-full border-collapse text-left text-sm">
-      <thead>
-        <tr className="border-b">
-          <th className="p-2">Name</th>
-          <th className="p-2">Username</th>
-          <th className="p-2">Role</th>
-          <th className="p-2">City</th>
-          <th className="p-2">Contact</th>
-          <th className="p-2">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {users.map((u) => (
-          <tr key={u.id} className="border-b hover:bg-[#f6f7f3]">
-            <td className="p-2">{u.name}</td>
-            <td className="p-2">{u.username}</td>
-            <td className="p-2">{u.role}</td>
-            <td className="p-2">{u.city}</td>
-            <td className="p-2">{u.contact}</td>
-            <td className="p-2 flex gap-3">
-              <button
-                onClick={() => {
-                  setEditUser(u);
-                  setShowUserModal(true);
-                }}
-                className="text-blue-700 hover:underline"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDeleteUser(u.id)}
-                className="text-red-600 hover:underline"
-              >
-                Delete
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-
-    {/* USER MODAL */}
-    {showUserModal && (
-      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-        <div className="bg-white p-6 rounded-xl w-96 shadow">
-
-          <h3 className="text-lg font-semibold mb-4 text-[#3e5e40]">
-            {editUser ? "Edit User" : "Add New User"}
-          </h3>
-
-          <form
-            onSubmit={editUser ? handleUpdateUser : handleAddUser}
-            className="space-y-3"
-          >
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={userForm.name}
-              onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-              className="border p-2 rounded w-full"
-              required
-            />
-
-            <input
-              type="text"
-              placeholder="Username"
-              value={userForm.username}
-              onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-              className="border p-2 rounded w-full"
-              required
-            />
-
-            <input
-              type="password"
-              placeholder="Password"
-              value={userForm.password}
-              onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-              className="border p-2 rounded w-full"
-              required
-            />
+      {/* Security Logs */}
+      {activeTab === "logs" && (
+        <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Security Logs
+            </h2>
 
             <select
-              value={userForm.role}
-              onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
-              className="border p-2 rounded w-full bg-white"
-              required
+              value={logLevelFilter}
+              onChange={(e) => setLogLevelFilter(e.target.value)}
+              className="border rounded-lg px-3 py-2 bg-white text-sm"
             >
-              <option value="">Select Role</option>
-              <option value="Farmer">Farmer</option>
-              <option value="Buyer">Buyer</option>
-              <option value="Admin">Admin</option>
-              <option value="Government">Government</option>
+              <option value="All">All Levels</option>
+              <option value="Info">Info</option>
+              <option value="Warning">Warning</option>
+              <option value="Error">Error</option>
             </select>
+          </div>
 
-            <input
-              type="text"
-              placeholder="City"
-              value={userForm.city}
-              onChange={(e) => setUserForm({ ...userForm, city: e.target.value })}
-              className="border p-2 rounded w-full"
-            />
+          {filteredLogs.length === 0 ? (
+            <p className="text-gray-500 italic">No logs found.</p>
+          ) : (
+            <table className="w-full border-collapse text-left text-sm bg-white rounded-xl overflow-hidden shadow-sm">
+              <thead className="bg-[#eef3ec] text-[#3e5e40]">
+                <tr>
+                  <th className="p-3">Time</th>
+                  <th className="p-3">User</th>
+                  <th className="p-3">Action</th>
+                  <th className="p-3">Level</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLogs.map((log) => (
+                  <tr key={log.id} className="border-t hover:bg-[#f6f7f3] transition">
+                    <td className="p-3">{log.time}</td>
+                    <td className="p-3">{log.user}</td>
+                    <td className="p-3">{log.action}</td>
+                    <td
+                      className={`p-3 font-medium ${
+                        log.level === "Error"
+                          ? "text-red-600"
+                          : log.level === "Warning"
+                          ? "text-yellow-700"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {log.level}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
 
-            <input
-              type="text"
-              placeholder="Contact"
-              value={userForm.contact}
-              onChange={(e) => setUserForm({ ...userForm, contact: e.target.value })}
-              className="border p-2 rounded w-full"
-            />
+      {/* Maintenance */}
+      {activeTab === "maintenance" && (
+        <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] space-y-6">
+          <h2 className="text-xl font-semibold text-gray-800">System Maintenance</h2>
 
-            <div className="flex justify-between mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+            {/* Backup */}
+            <div className="border border-[#e0e6dc] rounded-xl p-5 bg-[#f9faf8]">
+              <h3 className="font-semibold text-[#3e5e40] mb-2">Backup Database</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Creates a snapshot of the database (simulated).
+              </p>
               <button
-                type="button"
-                onClick={() => setShowUserModal(false)}
-                className="text-gray-600 border px-4 py-2 rounded hover:bg-gray-100"
+                onClick={handleBackup}
+                className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg text-sm"
               >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded"
-              >
-                Save
+                Run Backup
               </button>
             </div>
-          </form>
-        </div>
-      </div>
-    )}
 
-    
-  </div>
-)}
-
-{activeTab === "logs" && (
-  <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-xl font-semibold text-gray-800">
-        Security Logs
-      </h2>
-
-      <select
-        value={logLevelFilter}
-        onChange={(e) => setLogLevelFilter(e.target.value)}
-        className="border rounded-lg px-3 py-2 bg-white text-sm"
-      >
-        <option value="All">All Levels</option>
-        <option value="Info">Info</option>
-        <option value="Warning">Warning</option>
-        <option value="Error">Error</option>
-      </select>
-    </div>
-
-    {filteredLogs.length === 0 ? (
-      <p className="text-gray-500 italic">No logs found.</p>
-    ) : (
-      <table className="w-full border-collapse text-left text-sm">
-        <thead>
-          <tr className="border-b">
-            <th className="p-2">Time</th>
-            <th className="p-2">User</th>
-            <th className="p-2">Action</th>
-            <th className="p-2">Level</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredLogs.map((log) => (
-            <tr key={log.id} className="border-b hover:bg-[#f6f7f3]">
-              <td className="p-2">{log.time}</td>
-              <td className="p-2">{log.user}</td>
-              <td className="p-2">{log.action}</td>
-              <td
-                className={`p-2 font-medium ${
-                  log.level === "Error"
-                    ? "text-red-600"
-                    : log.level === "Warning"
-                    ? "text-yellow-700"
-                    : "text-gray-700"
-                }`}
+            {/* Restore */}
+            <div className="border border-[#e0e6dc] rounded-xl p-5 bg-[#f9faf8]">
+              <h3 className="font-semibold text-[#3e5e40] mb-2">Restore Backup</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Restores the last backup snapshot (simulated).
+              </p>
+              <button
+                onClick={handleRestore}
+                className="bg-[#e0b28e] hover:bg-[#d79d70] text-white px-4 py-2 rounded-lg text-sm"
               >
-                {log.level}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )}
- 
-  </div>
-)}
+                Restore
+              </button>
+            </div>
 
-    {activeTab === "maintenance" && (
-  <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc] space-y-6">
-    <h2 className="text-xl font-semibold text-gray-800">System Maintenance</h2>
-    <p className="text-gray-600 text-sm">
-      These maintenance tools simulate real administrative operations as described in the design document.
-    </p>
+            {/* Integrity */}
+            <div className="border border-[#e0e6dc] rounded-xl p-5 bg-[#f9faf8]">
+              <h3 className="font-semibold text-[#3e5e40] mb-2">Integrity Check</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Validates system data consistency (simulated).
+              </p>
+              <button
+                onClick={handleIntegrityCheck}
+                className="bg-[#8f9fae] hover:bg-[#7b8a98] text-white px-4 py-2 rounded-lg text-sm"
+              >
+                Run Check
+              </button>
+            </div>
 
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-
-      {/* Backup Card */}
-      <div className="border border-[#e0e6dc] rounded-xl p-5 bg-[#f9faf8]">
-        <h3 className="font-semibold text-[#3e5e40] mb-2">Backup Database</h3>
-        <p className="text-sm text-gray-600 mb-3">
-          Creates a snapshot of the current database state for recovery.
-        </p>
-        <button
-          onClick={handleBackup}
-          className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg text-sm"
-        >
-          Run Backup
-        </button>
-      </div>
-
-      {/* Restore Card */}
-      <div className="border border-[#e0e6dc] rounded-xl p-5 bg-[#f9faf8]">
-        <h3 className="font-semibold text-[#3e5e40] mb-2">Restore Backup</h3>
-        <p className="text-sm text-gray-600 mb-3">
-          Loads the latest backup snapshot in case of system failure.
-        </p>
-        <button
-          onClick={handleRestore}
-          className="bg-[#e0b28e] hover:bg-[#d79d70] text-white px-4 py-2 rounded-lg text-sm"
-        >
-          Restore
-        </button>
-      </div>
-
-      {/* Integrity Check Card */}
-      <div className="border border-[#e0e6dc] rounded-xl p-5 bg-[#f9faf8]">
-        <h3 className="font-semibold text-[#3e5e40] mb-2">Integrity Check</h3>
-        <p className="text-sm text-gray-600 mb-3">
-          Verifies that all database references and structures are valid.
-        </p>
-        <button
-          onClick={handleIntegrityCheck}
-          className="bg-[#8f9fae] hover:bg-[#7b8a98] text-white px-4 py-2 rounded-lg text-sm"
-        >
-          Run Check
-        </button>
-      </div>
-
-    </div>
-  </div>
-)}
-
+          </div>
+        </div>
+      )}
 
     </div>
   );
