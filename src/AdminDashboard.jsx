@@ -81,27 +81,44 @@ export default function AdminDashboard() {
     { id: "maintenance", label: "Maintenance", icon: <Settings size={16} /> },
   ];
 
-  // Count crops per city
-const cityCounts = crops.reduce((acc, crop) => {
-  acc[crop.region] = (acc[crop.region] || 0) + 1;
-  return acc;
-}, {});
+// ====== Admin Stats ======
 
-const barChartData = Object.entries(cityCounts).map(([city, count]) => ({
-  city,
-  count,
-}));
+// Summary numbers
+const stats = {
+  totalFarmers: farmers.length,
+  totalCrops: crops.length,
+  totalUsers: users.length,
+  topCity:
+    crops.length > 0
+      ? Object.entries(
+          crops.reduce((acc, crop) => {
+            acc[crop.region] = (acc[crop.region] || 0) + 1;
+            return acc;
+          }, {})
+        ).sort((a, b) => b[1] - a[1])[0][0]
+      : "-",
+};
 
-// Count crop types (Vegetable/Fruit)
-const typeCounts = crops.reduce((acc, crop) => {
-  acc[crop.type] = (acc[crop.type] || 0) + 1;
-  return acc;
-}, {});
+// Bar Chart Data (Cities)
+const chartData = Object.entries(
+  crops.reduce((acc, crop) => {
+    acc[crop.region] = (acc[crop.region] || 0) + 1;
+    return acc;
+  }, {})
+).map(([city, count]) => ({ city, count }));
 
+// Pie Chart Data (Crop Types)
 const pieChartData = [
-  { type: "Vegetable", value: crops.filter(c => c.type === "Vegetable").length },
-  { type: "Fruit", value: crops.filter(c => c.type === "Fruit").length },
+  {
+    type: "Vegetable",
+    value: crops.filter((c) => c.type === "Vegetable").length,
+  },
+  {
+    type: "Fruit",
+    value: crops.filter((c) => c.type === "Fruit").length,
+  },
 ];
+
 
 
 
