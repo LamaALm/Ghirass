@@ -76,6 +76,24 @@
       "farmerId": "c9bf"
     }
   ],
-  "logs": []
+  "logs": [],
+"licenses": [
+  {
+    "id": "L-001",
+    "licenseNumber": "L-001",
+    "farmerName": "Lama Almofadda",
+    "farmName": "Lama Farm",
+    "city": "Jubail",
+    "status": "Valid"
+  },
+  {
+    "id": "L-002",
+    "licenseNumber": "L-002",
+    "farmerName": "Ahmed Mohammed",
+    "farmName": "Ahmed Farm",
+    "city": "Dammam",
+    "status": "Valid"
+  }
+]
 
 }
