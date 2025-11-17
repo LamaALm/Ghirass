@@ -6,6 +6,8 @@ import BuyerDashboard from "./BuyerDashboard";
 import Favorites from "./Favorites";
 import FarmPage from "./FarmPage";
 import AdminDashboard from "./AdminDashboard";
+import GovernmentDashboard from "./GovernmentDashboard";
+
 
 
 function App() {
@@ -19,6 +21,7 @@ function App() {
         <Route path="/favorites" element={<Favorites />} />
         <Route path="/farm/:farmer" element={<FarmPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/government" element={<GovernmentDashboard />} />
       </Routes>
     </Router>
   );

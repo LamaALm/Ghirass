@@ -37,6 +37,13 @@ export default function LoginPage() {
         >
           Login as Admin
         </button>
+        <button
+  onClick={() => navigate("/government")}
+  className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg"
+>
+  Government Portal
+</button>
+
       </div>
 
       {/* Footer */}
