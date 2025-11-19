@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { PlusCircle, Edit2, Trash2, X } from "lucide-react";
 import { writeLog } from "./utils/logger";
+import { io } from "socket.io-client";
 
 
 export default function FarmerDashboard() {
@@ -17,11 +18,16 @@ export default function FarmerDashboard() {
   const farmerInfo = JSON.parse(localStorage.getItem("farmerData"));
 
   // Sensor state
-  const [humidity, setHumidity] = useState(45);
-  const [temperature, setTemperature] = useState(28);
-  const [irrigationOn, setIrrigationOn] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleString());
-  const [isManualMode, setIsManualMode] = useState(false);
+const [temperature, setTemperature] = useState(null);
+const [humidity, setHumidity] = useState(null);
+const [soil, setSoil] = useState(null);
+const [irrigationOn, setIrrigationOn] = useState(false);
+const [reason, setReason] = useState("");
+const [proba, setProba] = useState(null);
+const [lastUpdated, setLastUpdated] = useState("");
+const [isManualMode, setIsManualMode] = useState(false);
+
+
 
 
 
@@ -185,15 +191,60 @@ export default function FarmerDashboard() {
       .catch((err) => console.error("Error updating crop:", err));
   };
 
-  // Simulate sensor readings
+// Real-time sensor data
 useEffect(() => {
-  const interval = setInterval(() => {
-    setHumidity((h) => Math.max(30, Math.min(70, h + (Math.random() * 4 - 2))));
-    setTemperature((t) => Math.max(20, Math.min(35, t + (Math.random() * 2 - 1))));
-    setLastUpdated(new Date().toLocaleString()); // update time
-  }, 60000); // update every 1 minute
-  return () => clearInterval(interval);
+  const socket = io("https://ghirass-4.onrender.com", {
+    transports: ["websocket"],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 2000,
+  });
+
+  socket.on("connect", () => {
+    console.log("Connected to backend real-time server.");
+  });
+
+  socket.on("realtime_update", (data) => {
+    console.log("Sensor update:", data);
+
+    // Update UI values
+    setTemperature(data.temperature);
+    setHumidity(data.humidity);
+    setSoil(data.soil_pct);
+    setIrrigationOn(data.pump_on);
+    setReason(data.reason);
+    setProba(data.proba);
+    setLastUpdated(new Date().toLocaleString());
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Disconnected from backend.");
+  });
+
+  return () => {
+    socket.disconnect();
+  };
 }, []);
+
+useEffect(() => {
+  fetch("https://ghirass-4.onrender.com/")
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("Initial sensor snapshot:", data);
+      setTemperature(data.temperature ?? null);
+      setHumidity(data.humidity ?? null);
+      setSoil(data.soil_pct ?? null);
+      setIrrigationOn(data.pump_on ?? false);
+      setReason(data.reason ?? "");
+      setProba(data.prob ?? null);
+      setLastUpdated(new Date().toLocaleString());
+    })
+    .catch((err) => {
+      console.error("Error fetching initial sensor data:", err);
+    });
+}, []);
+
+
 
   return (
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6 transition-all duration-300">
@@ -210,38 +261,33 @@ useEffect(() => {
       
 {/* Environment Data Cards */}
 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
-  <div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] text-center">
-    <h3 className="text-gray-600 text-sm font-medium">Temperature</h3>
-    <p className="text-3xl font-semibold text-[#3e5e40] mt-2">
-      {temperature.toFixed(1)}°C{" "}
-      <span className="text-sm">
-        {temperature > 30 ? "↓" : "↑"}
-      </span>
-    </p>
-    <p className="text-gray-500 text-xs mt-1">Range 20–35°C</p>
-  </div>
 
-  <div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] text-center">
-    <h3 className="text-gray-600 text-sm font-medium">Humidity</h3>
-    <p className="text-3xl font-semibold text-[#3e5e40] mt-2">
-      {humidity.toFixed(0)}%{" "}
-      <span className="text-sm">
-        {humidity > 60 ? "↑" : "↓"}
-      </span>
-    </p>
-    <p className="text-gray-500 text-xs mt-1">Range 40–75%</p>
-  </div>
+<div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] text-center">
+  <h3 className="text-gray-600 text-sm font-medium">Temperature</h3>
+  <p className="text-3xl font-semibold text-[#3e5e40] mt-2">
+    {temperature !== null ? `${temperature}°C` : "Loading..."}
+  </p>
+  <p className="text-gray-500 text-xs mt-1">Range 20–35°C</p>
+</div>
 
-  <div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] text-center">
-    <h3 className="text-gray-600 text-sm font-medium">Soil Moisture</h3>
-    <p className="text-3xl font-semibold text-[#3e5e40] mt-2">
-      {humidity.toFixed(0) - 28}%{" "}
-      <span className="text-sm">
-        {humidity > 50 ? "↑" : "↓"}
-      </span>
-    </p>
-    <p className="text-gray-500 text-xs mt-1">Range 30–65%</p>
-  </div>
+
+<div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] text-center">
+  <h3 className="text-gray-600 text-sm font-medium">Humidity</h3>
+  <p className="text-3xl font-semibold text-[#3e5e40] mt-2">
+    {humidity !== null ? `${humidity}%` : "Loading..."}
+  </p>
+  <p className="text-gray-500 text-xs mt-1">Range 40–75%</p>
+</div>
+
+
+<div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] text-center">
+  <h3 className="text-gray-600 text-sm font-medium">Soil Moisture</h3>
+  <p className="text-3xl font-semibold text-[#3e5e40] mt-2">
+    {soil !== null ? `${soil}%` : "Loading..."}
+  </p>
+  <p className="text-gray-500 text-xs mt-1">Range 30–65%</p>
+</div>
+
 </div>
 
 {/* Irrigation Control Section */}
@@ -268,17 +314,24 @@ useEffect(() => {
   </button>
 </div>
 
-{/* Irrigation Status Section */}
-<div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] mt-3">
-  <h3 className="text-gray-700 font-medium mb-1">Irrigation Status</h3>
+{/* Irrigation Pump Real Status */}
+<div className="bg-white p-5 rounded-xl shadow border border-[#e0e6dc] mt-3 text-center">
+  <h3 className="text-gray-700 font-medium mb-2">Irrigation Pump Status</h3>
+
   <p
-    className={`text-sm font-semibold ${
-      isManualMode ? "text-[#8b7f6b]" : "text-[#3e5e40]"
+    className={`text-2xl font-semibold ${
+      irrigationOn ? "text-green-700" : "text-red-600"
     }`}
   >
-    {isManualMode
-      ? "Manual irrigation active — system control disabled"
-      : "Automatic irrigation mode enabled"}
+    {irrigationOn ? "ON" : "OFF"}
+  </p>
+
+  <p className="text-sm text-gray-600 mt-2">
+    Reason: {reason ? reason : "—"}
+  </p>
+
+  <p className="text-sm text-gray-600 mt-1">
+    AI Probability: {proba ? proba : "—"}
   </p>
 </div>
 
