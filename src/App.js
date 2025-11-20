@@ -7,6 +7,9 @@ import Favorites from "./Favorites";
 import FarmPage from "./FarmPage";
 import AdminDashboard from "./AdminDashboard";
 import GovernmentDashboard from "./GovernmentDashboard";
+import AdminPin from "./AdminPin";
+import GovPin from "./GovPin";
+
 
 
 
@@ -22,6 +25,9 @@ function App() {
         <Route path="/farm/:farmer" element={<FarmPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/government" element={<GovernmentDashboard />} />
+        <Route path="/admin-pin" element={<AdminPin />} />
+        <Route path="/gov-pin" element={<GovPin />} />
+
       </Routes>
     </Router>
   );

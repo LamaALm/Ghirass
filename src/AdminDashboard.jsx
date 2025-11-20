@@ -6,8 +6,11 @@ import CropsTab from "./components/CropsTab";
 import UsersTab from "./components/UsersTab";
 import LogsTab from "./components/LogsTab";
 import MaintenanceTab from "./components/MaintenanceTab";
+import { useNavigate } from "react-router-dom";
+import logo from "./Ghirass-Logo.png";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
   // ====== State ======
@@ -88,9 +91,25 @@ useEffect(() => {
 
       {/* Main Content */}
       <div className="flex-1 p-8 bg-[#f6f7f3] min-h-screen">
-        <h1 className="text-3xl font-semibold text-[#3e5e40] mb-2">
-          Admin Dashboard
-        </h1>
+
+                <div className="flex items-center justify-between">
+  
+  {/* Title stays left exactly as before */}
+  <h1 className="text-3xl font-semibold text-[#3e5e40]">
+    Admin Dashboard
+  </h1>
+
+  {/* Logo on the right */}
+  <img
+    src={logo}
+    alt="Ghirass Logo"
+    className="h-20 cursor-pointer hover:opacity-80 transition"
+    onClick={() => navigate("/")}
+  />
+</div>
+        
+  
+        
         <p className="text-gray-600 mb-6">
           Manage system data, monitor logs, and perform administrative maintenance.
         </p>

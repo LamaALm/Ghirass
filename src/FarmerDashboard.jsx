@@ -10,10 +10,13 @@ import {
 import { PlusCircle, Edit2, Trash2, X } from "lucide-react";
 import { writeLog } from "./utils/logger";
 import { io } from "socket.io-client";
-
+import { useNavigate } from "react-router-dom";
+import logo from "./Ghirass-Logo.png";
 
 export default function FarmerDashboard() {
 
+
+  const navigate = useNavigate();
   // Get logged-in farmer info from localStorage
   const farmerInfo = JSON.parse(localStorage.getItem("farmerData"));
 
@@ -247,8 +250,28 @@ useEffect(() => {
 
 
   return (
+    
+
+
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6 transition-all duration-300">
-      <h1 className="text-3xl font-semibold text-[#3e5e40]">Farmer Dashboard</h1>
+      {/* Header Row — Title (left) + Logo (right) */}
+<div className="flex items-center justify-between">
+  
+  {/* Title stays left exactly as before */}
+  <h1 className="text-3xl font-semibold text-[#3e5e40]">
+    Farmer Dashboard
+  </h1>
+
+  {/* Logo on the right */}
+  <img
+    src={logo}
+    alt="Ghirass Logo"
+    className="h-20 cursor-pointer hover:opacity-80 transition"
+    onClick={() => navigate("/")}
+  />
+</div>
+
+      
 
       {farmerInfo && (
         <p className="text-gray-600 mb-4">

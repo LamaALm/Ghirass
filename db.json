@@ -89,9 +89,25 @@
   {
     "id": "L-002",
     "licenseNumber": "L-002",
-    "farmerName": "Ahmed Mohammed",
-    "farmName": "Ahmed Farm",
+    "farmerName": "Rana Alabdalgader",
+    "farmName": "Rana Farm",
+    "city": "Al Khobar",
+    "status": "Valid"
+  },
+  {
+    "id": "L-003",
+    "licenseNumber": "L-003",
+    "farmerName": "Renad Aldrwish",
+    "farmName": "Wardah Farm",
     "city": "Dammam",
+    "status": "Valid"
+  },
+  {
+    "id": "L-004",
+    "licenseNumber": "L-004",
+    "farmerName": "Basmah Alamri",
+    "farmName": "Lavender Farm",
+    "city": "Al Ahsa",
     "status": "Valid"
   }
 ]

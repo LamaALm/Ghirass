@@ -23,9 +23,10 @@ export default function FarmerLogin() {
     "Al Khobar",
     "Jubail",
     "Ras Tanura",
-    "Abqaiq",
     "Al Ahsa",
   ];
+
+  const [errors, setErrors] = useState({});
 
 
   const [isLoginMode, setIsLoginMode] = useState(false); // switch between login/signup
@@ -35,20 +36,58 @@ export default function FarmerLogin() {
     setFarmerData({ ...farmerData, [e.target.name]: e.target.value });
   };
 
+
+const validateForm = () => {
+  let newErrors = {};
+
+  // Full name: required + letters only
+  if (!farmerData.name.trim()) {
+    newErrors.name = "Full name is required";
+  } else if (!/^[A-Za-z\s]+$/.test(farmerData.name.trim())) {
+    newErrors.name = "Full name must contain letters only";
+  }
+
+  // Farm name: required + letters only
+  if (!farmerData.farmName.trim()) {
+    newErrors.farmName = "Farm name is required";
+  } else if (!/^[A-Za-z\s]+$/.test(farmerData.farmName.trim())) {
+    newErrors.farmName = "Farm name must contain letters only";
+  }
+
+  // City
+  if (!farmerData.city) {
+    newErrors.city = "Select your city";
+  }
+
+  // Contact: digits only + 10 digits
+  if (!farmerData.contact.trim()) {
+    newErrors.contact = "Contact number is required";
+  } else if (!/^\d+$/.test(farmerData.contact)) {
+    newErrors.contact = "Contact number must contain digits only";
+  } else if (farmerData.contact.length !== 10) {
+    newErrors.contact = "Contact number must be 10 digits";
+  }
+
+  // Username
+  if (!farmerData.username.trim()) {
+    newErrors.username = "Username is required";
+  }
+
+  // Password
+  if (farmerData.password.length < 6) {
+    newErrors.password = "Password must be at least 6 characters";
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
+
 // Sign Up: add new farmer to db.json
 const handleSignUp = (e) => {
   e.preventDefault();
 
-  if (
-    !farmerData.name ||
-    !farmerData.username ||
-    !farmerData.password ||
-    !farmerData.city ||
-    !farmerData.licenseNumber
-  ) {
-    alert("Please fill all required fields.");
-    return;
-  }
+  if (!validateForm()) return;  // stop here if errors exist
 
   // STEP 1 — Check license validity
   fetch(
@@ -65,11 +104,7 @@ const handleSignUp = (e) => {
       fetch("https://ghirass-api.onrender.com/farmers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-  ...farmerData,
-  licenseNumber: farmerData.licenseNumber, // new
-}),
-
+        body: JSON.stringify(farmerData),
       })
         .then((res) => res.json())
         .then((data) => {
@@ -153,6 +188,7 @@ writeLog(farmerData.username, "Failed farmer login attempt", "Warning");
                   placeholder="Enter your name"
                   className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
                 />
+                {errors.name && <p className="text-red-600 text-sm">{errors.name}</p>}
               </div>
 
               <div>
@@ -167,6 +203,7 @@ writeLog(farmerData.username, "Failed farmer login attempt", "Warning");
                   placeholder="Enter farm name"
                   className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
                 />
+                {errors.farmName && <p className="text-red-600 text-sm">{errors.farmName}</p>}
               </div>
 
               <div>
@@ -199,6 +236,7 @@ writeLog(farmerData.username, "Failed farmer login attempt", "Warning");
                   placeholder="Enter your phone number"
                   className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
                 />
+                {errors.contact && <p className="text-red-600 text-sm">{errors.contact}</p>}
               </div>
               <div>
   <label className="block text-gray-700 text-sm mb-1">License Number</label>
@@ -211,6 +249,7 @@ writeLog(farmerData.username, "Failed farmer login attempt", "Warning");
     className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
     required
   />
+ 
 </div>
 
             </>
@@ -230,6 +269,7 @@ writeLog(farmerData.username, "Failed farmer login attempt", "Warning");
               className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
               required
             />
+            {errors.username && <p className="text-red-600 text-sm">{errors.username}</p>}
           </div>
 
           <div>
@@ -245,6 +285,7 @@ writeLog(farmerData.username, "Failed farmer login attempt", "Warning");
               className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
               required
             />
+            {errors.password && <p className="text-red-600 text-sm">{errors.password}</p>}
           </div>
 
           <button

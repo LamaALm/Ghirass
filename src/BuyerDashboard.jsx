@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
+import logo from "./Ghirass-Logo.png";
 
 export default function BuyerDashboard() {
   const [crops, setCrops] = useState([]);
@@ -11,7 +11,7 @@ export default function BuyerDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSeller, setSelectedSeller] = useState(null);
   const navigate = useNavigate();
-
+ 
 
 
 
@@ -99,7 +99,23 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6 transition-all duration-300">
-      <h1 className="text-3xl font-semibold text-[#3e5e40]">Buyer Dashboard</h1>
+
+            {/* Header Row — Title (left) + Logo (right) */}
+<div className="flex items-center justify-between">
+  
+  {/* Title stays left exactly as before */}
+  <h1 className="text-3xl font-semibold text-[#3e5e40]">
+    Buyer Dashboard
+  </h1>
+
+  {/* Logo on the right */}
+  <img
+    src={logo}
+    alt="Ghirass Logo"
+    className="h-20 cursor-pointer hover:opacity-80 transition"
+    onClick={() => navigate("/")}
+  />
+</div>
       <p className="text-gray-600 mb-6">
         Explore fresh crops directly from local farmers 🌿
       </p>

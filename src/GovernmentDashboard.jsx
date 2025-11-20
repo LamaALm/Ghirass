@@ -4,8 +4,11 @@ import GovOverviewTab from "./components/GovOverviewTab";
 import GovLicensesTab from "./components/GovLicensesTab";
 import GovFarmsTab from "./components/GovFarmsTab";
 import GovReportsTab from "./components/GovReportsTab";
+import { useNavigate } from "react-router-dom";
+import logo from "./Ghirass-Logo.png";
 
 export default function GovernmentDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
   const [licenses, setLicenses] = useState([]);
@@ -33,9 +36,22 @@ export default function GovernmentDashboard() {
 
       {/* Main Content */}
       <div className="flex-1 p-8 bg-[#f6f7f3] min-h-screen">
-        <h1 className="text-3xl font-semibold text-[#3e5e40] mb-2">
-          Government Dashboard
-        </h1>
+        <div className="flex items-center justify-between">
+  
+  {/* Title stays left exactly as before */}
+  <h1 className="text-3xl font-semibold text-[#3e5e40]">
+    Government Dashboard
+  </h1>
+
+  {/* Logo on the right */}
+  <img
+    src={logo}
+    alt="Ghirass Logo"
+    className="h-20 cursor-pointer hover:opacity-80 transition"
+    onClick={() => navigate("/")}
+  />
+</div>
+        
         <p className="text-gray-600 mb-6">
           Monitoring farms, licenses, and crop distribution across cities.
         </p>

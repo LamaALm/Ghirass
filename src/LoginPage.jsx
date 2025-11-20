@@ -1,11 +1,16 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import logo from "./Ghirass-Logo.png";
 
 export default function LoginPage() {
   const navigate = useNavigate();
 
   return (
+    
     <div className="min-h-screen bg-[#f6f7f3] flex flex-col items-center justify-center text-center px-6">
+      <div className="flex justify-center mt-6">
+  <img src={logo} alt="Ghirass Logo" className="h-60 opacity-90" />
+</div>
       {/* Logo / Title */}
       <h1 className="text-4xl font-semibold text-[#3e5e40] mb-4">
         Ghirass Smart Agriculture System
@@ -32,14 +37,14 @@ export default function LoginPage() {
         </button>
 
         <button
-          onClick={() => navigate("/admin")}
+          onClick={() => navigate("/admin-pin")}
           className="bg-[#8fae8d] hover:bg-[#7da07b] text-white font-medium px-8 py-3 rounded-lg shadow transition-all duration-200"
         >
           Login as Admin
         </button>
         <button
-  onClick={() => navigate("/government")}
-  className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg"
+  onClick={() => navigate("/gov-pin")}
+  className="bg-[#8fae8d] hover:bg-[#7da07b] text-white font-medium px-8 py-3 rounded-lg shadow transition-all duration-200"
 >
   Government Portal
 </button>
