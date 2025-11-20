@@ -9,7 +9,6 @@ import {
 } from "recharts";
 import { PlusCircle, Edit2, Trash2, X } from "lucide-react";
 import { writeLog } from "./utils/logger";
-import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import logo from "./Ghirass-Logo.png";
 
@@ -194,58 +193,40 @@ const [isManualMode, setIsManualMode] = useState(false);
       .catch((err) => console.error("Error updating crop:", err));
   };
 
-// Real-time sensor data
+// ===============================
+// RANDOM DEMO MODE (Presentation)
+// ===============================
 useEffect(() => {
-  const socket = io("https://ghirass-4.onrender.com", {
-    transports: ["websocket"],
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 2000,
-  });
-
-  socket.on("connect", () => {
-    console.log("Connected to backend real-time server.");
-  });
-
-  socket.on("realtime_update", (data) => {
-    console.log("Sensor update:", data);
-
-    // Update UI values
-    setTemperature(data.temperature);
-    setHumidity(data.humidity);
-    setSoil(data.soil_pct);
-    setIrrigationOn(data.pump_on);
-    setReason(data.reason);
-    setProba(data.proba);
+ 
+  const initialTimeout = setTimeout(() => {
+    setTemperature(Math.floor(Math.random() * (35 - 20 + 1)) + 20);
+    setHumidity(Math.floor(Math.random() * (75 - 40 + 1)) + 40);
+    setSoil(Math.floor(Math.random() * (65 - 30 + 1)) + 30);
+    setIrrigationOn(Math.random() > 0.5);
+    setReason(Math.random() > 0.5 ? "AI detected dry soil" : "AI normal state");
+    setProba((Math.random() * (0.99 - 0.5) + 0.5).toFixed(2));
     setLastUpdated(new Date().toLocaleString());
-  });
+  }, 2000); 
 
-  socket.on("disconnect", () => {
-    console.log("Disconnected from backend.");
-  });
-
-  return () => {
-    socket.disconnect();
-  };
+  return () => clearTimeout(initialTimeout);
 }, []);
+
 
 useEffect(() => {
-  fetch("https://ghirass-4.onrender.com/")
-    .then((res) => res.json())
-    .then((data) => {
-      console.log("Initial sensor snapshot:", data);
-      setTemperature(data.temperature ?? null);
-      setHumidity(data.humidity ?? null);
-      setSoil(data.soil_pct ?? null);
-      setIrrigationOn(data.pump_on ?? false);
-      setReason(data.reason ?? "");
-      setProba(data.prob ?? null);
-      setLastUpdated(new Date().toLocaleString());
-    })
-    .catch((err) => {
-      console.error("Error fetching initial sensor data:", err);
-    });
+  const interval = setInterval(() => {
+    setTemperature(Math.floor(Math.random() * (35 - 20 + 1)) + 20);
+    setHumidity(Math.floor(Math.random() * (75 - 40 + 1)) + 40);
+    setSoil(Math.floor(Math.random() * (65 - 30 + 1)) + 30);
+    setIrrigationOn(Math.random() > 0.5);
+    setReason(Math.random() > 0.5 ? "AI detected dry soil" : "AI normal state");
+    setProba((Math.random() * (0.99 - 0.5) + 0.5).toFixed(2));
+    setLastUpdated(new Date().toLocaleString());
+  }, 60000); 
+
+  return () => clearInterval(interval);
 }, []);
+
+
 
 
 
