@@ -87,6 +87,8 @@ const validateForm = () => {
 const handleSignUp = (e) => {
   e.preventDefault();
 
+  if (!validateForm()) return; 
+  
   if (
     !farmerData.name ||
     !farmerData.username ||
