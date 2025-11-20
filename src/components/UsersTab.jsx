@@ -107,7 +107,7 @@ const handleDeleteUser = async (user) => {
 
                   {/* DELETE */}
                   <button
-                    onClick={() => handleDeleteUser(u.id, u.username)}
+                    onClick={() => handleDeleteUser(u)}
                     className="text-red-600 hover:underline"
                   >
                     Delete
