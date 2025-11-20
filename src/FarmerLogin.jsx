@@ -87,60 +87,64 @@ const validateForm = () => {
 const handleSignUp = (e) => {
   e.preventDefault();
 
-  if (!validateForm()) return;  // stop here if errors exist
+  if (
+    !farmerData.name ||
+    !farmerData.username ||
+    !farmerData.password ||
+    !farmerData.city ||
+    !farmerData.licenseNumber
+  ) {
+    alert("Please fill all required fields.");
+    return;
+  }
 
   // Step 0 — Check if username already exists
-fetch(`https://ghirass-api.onrender.com/users?username=${farmerData.username}`)
-  .then((res) => res.json())
-  .then((existing) => {
-    if (existing.length > 0) {
-      alert("This username is already taken. Please choose another one.");
-      return;
-    }
-
-    // If unique → continue to license check
-    checkLicense();
-  });
-
-  
-  // STEP 1 — Check license validity
-  fetch(
-    `https://ghirass-api.onrender.com/licenses?licenseNumber=${farmerData.licenseNumber}`
-  )
+  fetch(`https://ghirass-api.onrender.com/users?username=${farmerData.username}`)
     .then((res) => res.json())
-    .then((licenseMatch) => {
-      if (licenseMatch.length === 0) {
-        alert("Invalid license number. Please contact the Ministry.");
+    .then((existing) => {
+      if (existing.length > 0) {
+        alert("This username already exists. Please choose another one.");
         return;
       }
 
-      // STEP 2 — If license exists, create farmer account
-      fetch("https://ghirass-api.onrender.com/farmers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(farmerData),
-      })
+      // Step 1 — Check license validity
+      fetch(
+        `https://ghirass-api.onrender.com/licenses?licenseNumber=${farmerData.licenseNumber}`
+      )
         .then((res) => res.json())
-        .then((data) => {
+        .then((licenseMatch) => {
+          if (licenseMatch.length === 0) {
+            alert("Invalid license number. Please contact the Ministry.");
+            return;
+          }
 
-          // STEP 3 — Add farmer to users list
-          fetch("https://ghirass-api.onrender.com/users", {
+          // Step 2 — Create farmer
+          fetch("https://ghirass-api.onrender.com/farmers", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: farmerData.name,
-              username: farmerData.username,
-              city: farmerData.city,
-              role: "Farmer",
-            }),
-          });
+            body: JSON.stringify(farmerData),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              // Step 3 — Add to users table
+              fetch("https://ghirass-api.onrender.com/users", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  name: farmerData.name,
+                  username: farmerData.username,
+                  city: farmerData.city,
+                  role: "Farmer",
+                }),
+              });
 
-          alert("Account created successfully! You can now log in.");
-          setIsLoginMode(true);
-        })
-        .catch((err) => console.error("Error creating farmer:", err));
+              alert("Account created successfully! You can now log in.");
+              setIsLoginMode(true);
+            });
+        });
     });
 };
+
 
 
 
