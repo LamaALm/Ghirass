@@ -89,6 +89,20 @@ const handleSignUp = (e) => {
 
   if (!validateForm()) return;  // stop here if errors exist
 
+  // Step 0 — Check if username already exists
+fetch(`https://ghirass-api.onrender.com/users?username=${farmerData.username}`)
+  .then((res) => res.json())
+  .then((existing) => {
+    if (existing.length > 0) {
+      alert("This username is already taken. Please choose another one.");
+      return;
+    }
+
+    // If unique → continue to license check
+    checkLicense();
+  });
+
+  
   // STEP 1 — Check license validity
   fetch(
     `https://ghirass-api.onrender.com/licenses?licenseNumber=${farmerData.licenseNumber}`
