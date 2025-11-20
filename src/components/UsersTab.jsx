@@ -1,28 +1,44 @@
 import React, { useState } from "react";
 import { writeLog } from "../utils/logger";
 
-export default function UsersTab({ users, setUsers }) {
+export default function UsersTab({ users, setUsers, fetchUsers }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
   // ============================
   // DELETE USER
   // ============================
-  const handleDeleteUser = (id, username) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+const handleDeleteUser = async (user) => {
+  if (!window.confirm("Are you sure you want to delete this user?")) return;
 
-    fetch(`https://ghirass-api.onrender.com/users/${id}`, {
+  try {
+    // Step 1: delete from /users
+    await fetch(`https://ghirass-api.onrender.com/users/${user.id}`, {
       method: "DELETE",
-    })
-      .then(() => {
-        alert("User deleted successfully.");
-        writeLog("Admin", `Deleted user: ${username}`, "Warning");
+    });
 
-        // update UI
-        setUsers(users.filter((u) => u.id !== id));
-      })
-      .catch((err) => console.error("Error deleting user:", err));
-  };
+    // Step 2: if the user is a farmer → delete also from /farmers
+    if (user.role === "Farmer") {
+      const farmerMatch = await fetch(
+        `https://ghirass-api.onrender.com/farmers?username=${user.username}`
+      ).then((res) => res.json());
+
+      if (farmerMatch.length > 0) {
+        await fetch(
+          `https://ghirass-api.onrender.com/farmers/${farmerMatch[0].id}`,
+          { method: "DELETE" }
+        );
+      }
+    }
+
+    alert("User deleted successfully.");
+    fetchUsers();
+
+  } catch (err) {
+    console.error("Error deleting user:", err);
+  }
+};
+
 
   // ============================
   // UPDATE USER

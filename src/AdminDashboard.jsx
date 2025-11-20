@@ -19,6 +19,17 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [logs, setLogs] = useState([]);
 
+  const fetchUsers = () => {
+  fetch("https://ghirass-api.onrender.com/users")
+    .then((res) => res.json())
+    .then((data) => setUsers(data))
+    .catch((err) => console.error("Error fetching users:", err));
+};
+
+useEffect(() => {
+  fetchUsers();
+}, []);
+
   // Fetch security logs from backend (REAL logs)
 useEffect(() => {
   fetch("https://ghirass-api.onrender.com/logs")
@@ -128,7 +139,7 @@ useEffect(() => {
         {activeTab === "crops" && <CropsTab crops={crops} />}
 
         {activeTab === "users" && (
-          <UsersTab users={users} setUsers={setUsers} />
+          <UsersTab users={users} fetchUsers={fetchUsers} setUsers={setUsers} />
         )}
 
 
