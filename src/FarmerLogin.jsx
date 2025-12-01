@@ -29,7 +29,7 @@ export default function FarmerLogin() {
   const [errors, setErrors] = useState({});
 
 
-  const [isLoginMode, setIsLoginMode] = useState(false); // switch between login/signup
+  const [isLoginMode, setIsLoginMode] = useState(true); // switch between login/signup
 
   // Handle form input
   const handleChange = (e) => {
@@ -87,11 +87,14 @@ const validateForm = () => {
 const handleSignUp = (e) => {
   e.preventDefault();
 
-  if (!validateForm()) return; 
-  
+  if (!validateForm()) return;
+
+  // نحول اليوزرنيم إلى lowercase مرة واحدة
+  const normalizedUsername = farmerData.username.trim().toLowerCase();
+
   if (
     !farmerData.name ||
-    !farmerData.username ||
+    !normalizedUsername ||
     !farmerData.password ||
     !farmerData.city ||
     !farmerData.licenseNumber
@@ -100,11 +103,15 @@ const handleSignUp = (e) => {
     return;
   }
 
-  // Step 0 — Check if username already exists
-  fetch(`https://ghirass-api.onrender.com/users?username=${farmerData.username}`)
+  // Step 0 — Check if username already exists (CASE-INSENSITIVE)
+  fetch("https://ghirass-api.onrender.com/users")
     .then((res) => res.json())
-    .then((existing) => {
-      if (existing.length > 0) {
+    .then((existingUsers) => {
+      const usernameExists = existingUsers.some(
+        (u) => u.username && u.username.toLowerCase() === normalizedUsername
+      );
+
+      if (usernameExists) {
         alert("This username already exists. Please choose another one.");
         return;
       }
@@ -120,21 +127,24 @@ const handleSignUp = (e) => {
             return;
           }
 
-          // Step 2 — Create farmer
+          // Step 2 — Create farmer (نخزن اليوزرنيم بشكل lowercase)
           fetch("https://ghirass-api.onrender.com/farmers", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(farmerData),
+            body: JSON.stringify({
+              ...farmerData,
+              username: normalizedUsername,
+            }),
           })
             .then((res) => res.json())
             .then((data) => {
-              // Step 3 — Add to users table
+              // Step 3 — Add to users table (برضه lowercase)
               fetch("https://ghirass-api.onrender.com/users", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   name: farmerData.name,
-                  username: farmerData.username,
+                  username: normalizedUsername,
                   city: farmerData.city,
                   role: "Farmer",
                 }),
@@ -150,38 +160,68 @@ const handleSignUp = (e) => {
 
 
 
-  // Login: verify username & password
-  const handleLogin = (e) => {
-    e.preventDefault();
 
-    fetch(
-      `https://ghirass-api.onrender.com/farmers?username=${farmerData.username}&password=${farmerData.password}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.length > 0) {
-          // Successful login
-          localStorage.setItem("farmerData", JSON.stringify(data[0]));
-          alert(`Welcome back, ${data[0].name}!`);
-          navigate("/farmer");
-writeLog(data[0].username, "Farmer login success", "Info");
+// Login: verify username & password
+const handleLogin = (e) => {
+  e.preventDefault();
 
+  const inputUsername = farmerData.username.trim().toLowerCase();
 
-        } else {
-          alert("Invalid username or password.");
-writeLog(farmerData.username, "Failed farmer login attempt", "Warning");
+  // نجيب كل المزارعين ونفلتر بالفرونت (case-insensitive)
+  fetch("https://ghirass-api.onrender.com/farmers")
+    .then((res) => res.json())
+    .then((farmers) => {
+      const matchedFarmer = farmers.find(
+        (f) =>
+          f.username &&
+          f.username.toLowerCase() === inputUsername &&
+          f.password === farmerData.password
+      );
 
+      if (matchedFarmer) {
+        // Successful login
+        localStorage.setItem("farmerData", JSON.stringify(matchedFarmer));
+        alert(`Welcome back, ${matchedFarmer.name}!`);
+        navigate("/farmer");
+        writeLog(matchedFarmer.username, "Farmer login success", "Info");
+      } else {
+        alert("Invalid username or password.");
+        writeLog(
+          inputUsername,
+          "Failed farmer login attempt",
+          "Warning"
+        );
+      }
+    })
+    .catch((err) => console.error("Error logging in:", err));
+};
 
-        }
-      })
-      .catch((err) => console.error("Error logging in:", err));
-  };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-[#f6f7f3] px-4">
       <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md border border-[#e0e6dc]">
+        {isLoginMode && (
+          <div className="w-full max-w-md mb-4">
+            <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-1 text-gray-600 hover:text-[#3e5e40] transition text-sm"
+            >
+              <span className="text-base">←</span>
+              <span>Back to main page</span>
+            </button>
+            </div>
+        )}
+        {!isLoginMode && (
+          <button
+          type="button"
+          onClick={() => setIsLoginMode(true)}
+          className="flex items-center text-sm text-[#3e5e40] mb-0 hover:underline"
+          >
+            <span className="text-xl">←</span>
+          </button>
+        )}
         <h1 className="text-3xl font-semibold text-[#3e5e40] text-center mb-2">
-          {isLoginMode ? "Farmer Login" : "Farmer Registration"}
+          {isLoginMode ? "Farmer Login" : "Farmer Register"}
         </h1>
         <p className="text-gray-500 text-center mb-6">
           {isLoginMode
@@ -312,7 +352,7 @@ writeLog(farmerData.username, "Failed farmer login attempt", "Warning");
             type="submit"
             className="w-full bg-[#8fae8d] hover:bg-[#7da07b] text-white py-2 rounded-lg font-medium transition-all duration-200"
           >
-            {isLoginMode ? "Login" : "Sign Up"}
+            {isLoginMode ? "Login" : "Register"}
           </button>
         </form>
 
@@ -322,7 +362,7 @@ writeLog(farmerData.username, "Failed farmer login attempt", "Warning");
             className="text-[#3e5e40] hover:underline text-sm"
           >
             {isLoginMode
-              ? "Don't have an account? Sign up here"
+              ? "Don't have an account? Register up here"
               : "Already have an account? Log in"}
           </button>
         </div>

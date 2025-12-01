@@ -21,6 +21,15 @@ export default function AdminPin() {
   return (
     <div className="min-h-screen flex justify-center items-center bg-[#f6f7f3]">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm border border-[#e0e6dc]">
+        <div className="w-full max-w-md mb-4">
+          <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-1 text-gray-600 hover:text-[#3e5e40] transition text-lg"
+          >
+            <span className="text-base">←</span>  
+            <span className="text-sm">Back to main page</span>
+          </button>
+        </div>
         <h2 className="text-2xl font-semibold text-[#3e5e40] mb-4 text-center">
           Admin Security Check
         </h2>

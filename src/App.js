@@ -7,6 +7,8 @@ import Favorites from "./Favorites";
 import FarmPage from "./FarmPage";
 import AdminDashboard from "./AdminDashboard";
 import GovernmentDashboard from "./GovernmentDashboard";
+import AdminLogin from "./AdminLogin";
+import GovLogin from "./GovLogin";
 import AdminPin from "./AdminPin";
 import GovPin from "./GovPin";
 
@@ -27,6 +29,8 @@ function App() {
         <Route path="/government" element={<GovernmentDashboard />} />
         <Route path="/admin-pin" element={<AdminPin />} />
         <Route path="/gov-pin" element={<GovPin />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+<Route path="/gov-login" element={<GovLogin />} />
 
       </Routes>
     </Router>

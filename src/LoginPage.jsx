@@ -37,13 +37,13 @@ export default function LoginPage() {
         </button>
 
         <button
-          onClick={() => navigate("/admin-pin")}
+          onClick={() => navigate("/admin-login")}
           className="bg-[#8fae8d] hover:bg-[#7da07b] text-white font-medium px-8 py-3 rounded-lg shadow transition-all duration-200"
         >
           Login as Admin
         </button>
         <button
-  onClick={() => navigate("/gov-pin")}
+  onClick={() => navigate("/gov-login")}
   className="bg-[#8fae8d] hover:bg-[#7da07b] text-white font-medium px-8 py-3 rounded-lg shadow transition-all duration-200"
 >
   Government Portal

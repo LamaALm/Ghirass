@@ -6,12 +6,19 @@ export default function GovPin() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
 
-  const GOV_PIN = "5566";
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError("");
 
-    if (pin === GOV_PIN) {
+    if (!currentUser || currentUser.role !== "Government") {
+      setError("Session expired or invalid user. Please log in again.");
+      navigate("/gov-login");
+      return;
+    }
+
+    if (pin === currentUser.pin) {
       navigate("/government");
     } else {
       setError("Incorrect PIN. Please try again.");
@@ -19,7 +26,7 @@ export default function GovPin() {
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-[#f6f7f3]">
+    <div className="min-h-screen flex justify-center items-center bg-[#f6f7f3] px-4">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm border border-[#e0e6dc]">
         <h2 className="text-2xl font-semibold text-[#3e5e40] mb-4 text-center">
           Government Portal Security
@@ -47,4 +54,3 @@ export default function GovPin() {
     </div>
   );
 }
-

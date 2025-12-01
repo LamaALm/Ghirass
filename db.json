@@ -1,22 +1,20 @@
 {
   "users": [
     {
-      "id": "u1",
-      "name": "Admin",
-      "username": "admin",
-      "password": "admin123",
-      "role": "Admin",
-      "city": "",
-      "contact": ""
+    "id": "1",
+    "name": "System Admin",
+    "username": "admin1",
+    "password": "Admin@123",
+    "role": "Admin",
+    "pin": "4321"
     },
     {
-      "id": "u2",
-      "name": "Lama Almofadda",
-      "username": "Lamaahmed",
-      "password": "Qwe123",
-      "role": "Farmer",
-      "city": "Jubail",
-      "contact": "0563791407"
+    "id": "2",
+    "name": "Ministry Officer",
+    "username": "gov1",
+    "password": "Gov@123",
+    "role": "Government",
+    "pin": "5566"
     },
     {
       "id": "u3",
