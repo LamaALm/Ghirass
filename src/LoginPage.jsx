@@ -30,7 +30,7 @@ export default function LoginPage() {
         </button>
 
         <button
-          onClick={() => navigate("/buyer")}
+          onClick={() => navigate("/buyer-login")}
           className="bg-[#8fae8d] hover:bg-[#7da07b] text-white font-medium px-8 py-3 rounded-lg shadow transition-all duration-200"
         >
           Login as Buyer
