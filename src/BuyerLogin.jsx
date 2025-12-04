@@ -28,17 +28,17 @@ export default function BuyerLogin() {
 
   const handleChange = (e) => {
     setBuyerData({ ...buyerData, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" });
+    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
   };
 
   // ---------- Validation ----------
   const validateForm = () => {
     const newErrors = {};
 
-    // name: letters + spaces only
+    // اسم كامل: حروف بأي لغة + مسافات
     if (!buyerData.name.trim()) {
       newErrors.name = "Full name is required.";
-    } else if (!/^[A-Za-z\s]+$/.test(buyerData.name.trim())) {
+    } else if (!/^[\p{L}\s]+$/u.test(buyerData.name.trim())) {
       newErrors.name = "Full name must contain letters only.";
     }
 
@@ -73,16 +73,21 @@ export default function BuyerLogin() {
   // ---------- Sign up ----------
   const handleSignUp = (e) => {
     e.preventDefault();
+    console.log("⭐ BUYER handleSignUp clicked", buyerData);
 
     if (!validateForm()) return;
 
-    // 1) Make sure username is unique in /users
-    fetch(
-      `https://ghirass-api.onrender.com/users?username=${buyerData.username}`
-    )
+    const normalizedUsername = buyerData.username.trim().toLowerCase();
+
+    // 1) تأكد أن اليوزرنيم ما هو مكرر (case-insensitive)
+    fetch("https://ghirass-api.onrender.com/users")
       .then((res) => res.json())
-      .then((existing) => {
-        if (existing.length > 0) {
+      .then((existingUsers) => {
+        const usernameExists = existingUsers.some(
+          (u) => u.username && u.username.toLowerCase() === normalizedUsername
+        );
+
+        if (usernameExists) {
           setErrors((prev) => ({
             ...prev,
             username: "This username is already taken.",
@@ -90,21 +95,24 @@ export default function BuyerLogin() {
           return;
         }
 
-        // 2) Create buyer in /buyers
+        // 2) إنشاء buyer في /buyers
         fetch("https://ghirass-api.onrender.com/buyers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buyerData),
+          body: JSON.stringify({
+            ...buyerData,
+            username: normalizedUsername,
+          }),
         })
           .then((res) => res.json())
           .then(() => {
-            // 3) Add to /users table with role Buyer
+            // 3) إضافة المستخدم إلى /users مع role = Buyer
             fetch("https://ghirass-api.onrender.com/users", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 name: buyerData.name,
-                username: buyerData.username,
+                username: normalizedUsername,
                 city: buyerData.city,
                 role: "Buyer",
               }),
@@ -122,23 +130,30 @@ export default function BuyerLogin() {
   const handleLogin = (e) => {
     e.preventDefault();
 
-    fetch(
-      `https://ghirass-api.onrender.com/buyers?username=${buyerData.username}&password=${buyerData.password}`
-    )
+    const inputUsername = buyerData.username.trim().toLowerCase();
+
+    fetch("https://ghirass-api.onrender.com/buyers")
       .then((res) => res.json())
-      .then((data) => {
-        if (data.length > 0) {
-          localStorage.setItem("buyerData", JSON.stringify(data[0]));
-          alert(`Welcome, ${data[0].name}!`);
-          writeLog(data[0].username, "Buyer login success", "Info");
-          navigate("/buyer"); // تأكدي إن هذا هو مسار BuyerDashboard
+      .then((buyers) => {
+        const matchedBuyer = buyers.find(
+          (b) =>
+            b.username &&
+            b.username.toLowerCase() === inputUsername &&
+            b.password === buyerData.password
+        );
+
+        if (matchedBuyer) {
+          localStorage.setItem("buyerData", JSON.stringify(matchedBuyer));
+          alert(`Welcome, ${matchedBuyer.name}!`);
+          writeLog(matchedBuyer.username, "Buyer login success", "Info");
+          navigate("/buyer");
         } else {
           setErrors((prev) => ({
             ...prev,
             login: "Invalid username or password.",
           }));
           writeLog(
-            buyerData.username,
+            inputUsername,
             "Failed buyer login attempt",
             "Warning"
           );
