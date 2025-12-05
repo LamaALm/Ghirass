@@ -1,66 +1,55 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import logo from "./Ghirass-Logo.png";
 
 export default function Favorites() {
   const navigate = useNavigate();
-  const [favoriteCrops, setFavoriteCrops] = useState([]);
+  const [favorites, setFavorites] = useState([]);
 
-  // المشتري الحالي (لازم يكون مسوي login)
-  const buyerInfo = JSON.parse(localStorage.getItem("buyerData"));
+  // نجيب المشتري الحالي
+  const buyer = JSON.parse(localStorage.getItem("buyerData") || "null");
+  const storageKey = buyer
+    ? `favorites_${buyer.username}`
+    : "favorites_guest";
 
   useEffect(() => {
-    // لو ما فيه مشتري مسجّل دخول → رجعيه لصفحة تسجيل الدخول
-    if (!buyerInfo) {
-      navigate("/buyer-login");
-      return;
-    }
-
-    // نجيب المفضلات + المحاصيل
-    const fetchFavoritesAndCrops = async () => {
-      try {
-        const [favoritesRes, cropsRes] = await Promise.all([
-          fetch(
-            `https://ghirass-api.onrender.com/favorites?buyerId=${buyerInfo.id}`
-          ),
-          fetch("https://ghirass-api.onrender.com/crops"),
-        ]);
-
-        const favoritesData = await favoritesRes.json(); // [{id,buyerId,cropId,...}]
-        const cropsData = await cropsRes.json();         // كل المحاصيل
-
-        // نركّب: نجيب بيانات المحصول لكل favorite
-        const cropsForBuyer = favoritesData
-          .map((fav) => cropsData.find((crop) => crop.id === fav.cropId))
-          .filter(Boolean); // نشيل أي undefined لو فيه مشكلة
-
-        setFavoriteCrops(cropsForBuyer);
-      } catch (err) {
-        console.error("Error loading favorites:", err);
-      }
-    };
-
-    fetchFavoritesAndCrops();
-  }, [buyerInfo, navigate]);
+    const saved = JSON.parse(localStorage.getItem(storageKey)) || [];
+    setFavorites(saved);
+  }, [storageKey]);
 
   return (
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6">
+      {/* Header Row — Title + Logo + Back */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-[#3e5e40]">My Favorites</h1>
-        <button
-          onClick={() => navigate(-1)}
-          className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition-all"
-        >
-          ← Back
-        </button>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-semibold text-[#3e5e40]">
+            My Favorites
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <img
+            src={logo}
+            alt="Ghirass Logo"
+            className="h-16 cursor-pointer hover:opacity-80 transition"
+            onClick={() => navigate("/")}
+          />
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition-all"
+          >
+            ← Back
+          </button>
+        </div>
       </div>
 
-      {favoriteCrops.length === 0 ? (
+      {favorites.length === 0 ? (
         <p className="text-gray-500 italic mt-6">
           You haven’t added any favorites yet.
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-          {favoriteCrops.map((crop) => (
+          {favorites.map((crop) => (
             <div
               key={crop.id}
               className="bg-white rounded-xl shadow border border-[#e0e6dc] p-4 hover:shadow-md transition-all"

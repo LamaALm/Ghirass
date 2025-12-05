@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 import logo from "./Ghirass-Logo.png";
 
 export default function BuyerDashboard() {
+  const navigate = useNavigate();
+
+  // المشتري الحالي (من تسجيل الدخول)
+  const buyer = JSON.parse(localStorage.getItem("buyerData") || "null");
+
   const [crops, setCrops] = useState([]);
   const [filteredCrops, setFilteredCrops] = useState([]);
   const [favorites, setFavorites] = useState([]);
@@ -10,18 +15,27 @@ export default function BuyerDashboard() {
   const [selectedCity, setSelectedCity] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSeller, setSelectedSeller] = useState(null);
-  const navigate = useNavigate();
- 
 
+  // مفتاح التخزين الخاص بهذا المشتري
+  const storageKey = buyer
+    ? `favorites_${buyer.username}`
+    : "favorites_guest";
 
-
-  // Load favorites from localStorage
+  // لو ما فيه مشتري مسجل دخول، رجّعيه لصفحة تسجيل المشتري
   useEffect(() => {
-    const savedFavorites = JSON.parse(localStorage.getItem("favorites")) || [];
-    setFavorites(savedFavorites);
-  }, []);
+    if (!buyer) {
+      navigate("/buyer-login");
+    }
+  }, [buyer, navigate]);
 
-  // Fetch crops from JSON server
+  // تحميل المفضلات من localStorage لهذا المشتري
+  useEffect(() => {
+    const savedFavorites =
+      JSON.parse(localStorage.getItem(storageKey)) || [];
+    setFavorites(savedFavorites);
+  }, [storageKey]);
+
+  // Fetch crops
   useEffect(() => {
     fetch("https://ghirass-api.onrender.com/crops")
       .then((res) => res.json())
@@ -32,7 +46,6 @@ export default function BuyerDashboard() {
       .catch((err) => console.error("Error fetching crops:", err));
   }, []);
 
-  // Cities (Eastern Province)
   const cities = [
     "All",
     "Dammam",
@@ -44,151 +57,155 @@ export default function BuyerDashboard() {
     "Al Ahsa",
   ];
 
+  // فلترة
+  const handleFilter = (type, city, search) => {
+    let filtered = crops;
 
+    if (type && type !== "All") {
+      filtered = filtered.filter(
+        (crop) => crop.type.toLowerCase() === type.toLowerCase()
+      );
+    }
 
+    if (city && city !== "All") {
+      filtered = filtered.filter(
+        (crop) => crop.region?.toLowerCase() === city.toLowerCase()
+      );
+    }
 
-// Handle filters
-const handleFilter = (type, city, search) => {
-  let filtered = crops;
+    if (search && search.trim() !== "") {
+      const term = search.toLowerCase();
+      filtered = filtered.filter(
+        (crop) =>
+          crop.name.toLowerCase().includes(term) ||
+          crop.type.toLowerCase().includes(term)
+      );
+    }
 
-  if (type && type !== "All") {
-    filtered = filtered.filter(
-      (crop) => crop.type.toLowerCase() === type.toLowerCase()
-    );
-  }
+    setFilteredCrops(filtered);
+  };
 
-  if (city && city !== "All") {
-    filtered = filtered.filter(
-      (crop) => crop.region?.toLowerCase() === city.toLowerCase()
-    );
-  }
+  useEffect(() => {
+    handleFilter(selectedType, selectedCity, searchTerm);
+  }, [selectedType, selectedCity, searchTerm, crops]);
 
-  if (search && search.trim() !== "") {
-    const term = search.toLowerCase();
-    filtered = filtered.filter(
-      (crop) =>
-        crop.name.toLowerCase().includes(term) ||
-        crop.type.toLowerCase().includes(term)
-    );
-  }
-
-  setFilteredCrops(filtered);
-};
-
-
-  // Update filters dynamically
-useEffect(() => {
-  handleFilter(selectedType, selectedCity, searchTerm);
-}, [selectedType, selectedCity, searchTerm, crops]);
-
-
-  // Add / Remove favorites
+  // إضافة / إزالة من المفضلة
   const toggleFavorite = (crop) => {
     let updatedFavorites;
+
     if (favorites.find((f) => f.id === crop.id)) {
       updatedFavorites = favorites.filter((f) => f.id !== crop.id);
     } else {
       updatedFavorites = [...favorites, crop];
     }
+
     setFavorites(updatedFavorites);
-    localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+    localStorage.setItem(storageKey, JSON.stringify(updatedFavorites));
   };
 
-  // Check if crop is in favorites
   const isFavorite = (id) => favorites.some((f) => f.id === id);
 
   return (
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6 transition-all duration-300">
+      {/* Header Row — Title (left) + Logo (right) */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-semibold text-[#3e5e40]">
+          Buyer Dashboard
+        </h1>
 
-            {/* Header Row — Title (left) + Logo (right) */}
-<div className="flex items-center justify-between">
-  
-  {/* Title stays left exactly as before */}
-  <h1 className="text-3xl font-semibold text-[#3e5e40]">
-    Buyer Dashboard
-  </h1>
+        <img
+          src={logo}
+          alt="Ghirass Logo"
+          className="h-20 cursor-pointer hover:opacity-80 transition"
+          onClick={() => navigate("/")}
+        />
+      </div>
 
-  {/* Logo on the right */}
-  <img
-    src={logo}
-    alt="Ghirass Logo"
-    className="h-20 cursor-pointer hover:opacity-80 transition"
-    onClick={() => navigate("/")}
-  />
-</div>
+      {buyer && (
+        <p className="text-gray-600 mb-2">
+          Welcome,{" "}
+          <span className="font-semibold text-[#3e5e40]">
+            {buyer.name}
+          </span>{" "}
+          from {buyer.city || "your city"} 🌿
+        </p>
+      )}
+
       <p className="text-gray-600 mb-6">
-        Explore fresh crops directly from local farmers 🌿
+        Explore fresh crops directly from local farmers.
       </p>
 
       {/* Filters */}
-<div className="bg-white p-4 rounded-xl shadow border border-[#e0e6dc] flex flex-wrap items-center justify-between">
-  {/* Left Section: Search + Filters */}
-  <div className="flex flex-wrap items-center gap-4">
-    {/* Search Box */}
-    <div>
-      <label className="text-sm font-medium text-gray-700 mr-2">Type:</label>
-      <input
-        type="text"
-        placeholder="Search crops..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d] w-48"
-      />
-    </div>
+      <div className="bg-white p-4 rounded-xl shadow border border-[#e0e6dc] flex flex-wrap items-center justify-between">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Search */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mr-2">
+              Search:
+            </label>
+            <input
+              type="text"
+              placeholder="Search crops..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d] w-48"
+            />
+          </div>
 
-    {/* Type Filter */}
-    <div>
-      <select
-        value={selectedType}
-        onChange={(e) => setSelectedType(e.target.value)}
-        className="border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
-      >
-        <option value="All">All</option>
-        <option value="Vegetable">Vegetable</option>
-        <option value="Fruit">Fruit</option>
-      </select>
-    </div>
+          {/* Type */}
+          <div>
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
+            >
+              <option value="All">All Types</option>
+              <option value="Vegetable">Vegetable</option>
+              <option value="Fruit">Fruit</option>
+            </select>
+          </div>
 
-    {/* City Filter */}
-    <div>
-      <label className="text-sm font-medium text-gray-700 mr-2">City:</label>
-      <select
-        value={selectedCity}
-        onChange={(e) => setSelectedCity(e.target.value)}
-        className="border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
-      >
-        {cities.map((city) => (
-          <option key={city} value={city}>
-            {city}
-          </option>
-        ))}
-      </select>
-    </div>
+          {/* City */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mr-2">
+              City:
+            </label>
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
+            >
+              {cities.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </div>
 
-    {/* Reset Button */}
-    <button
-      onClick={() => {
-        setSelectedType("All");
-        setSelectedCity("All");
-        setSearchTerm("");
-      }}
-      className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition-all"
-    >
-      Reset Filters
-    </button>
-  </div>
+          {/* Reset */}
+          <button
+            onClick={() => {
+              setSelectedType("All");
+              setSelectedCity("All");
+              setSearchTerm("");
+            }}
+            className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition-all"
+          >
+            Reset Filters
+          </button>
+        </div>
 
-  {/* Right Section: Go to Favorites */}
-  <div>
-    <button
-      onClick={() => navigate("/favorites")}
-      className="text-[#3e5e40] hover:underline text-sm"
-    >
-      Go to Favorites →
-    </button>
-  </div>
-</div>
-
+        {/* Go to Favorites */}
+        <div>
+          <button
+            onClick={() => navigate("/favorites")}
+            className="text-[#3e5e40] hover:underline text-sm"
+          >
+            Go to Favorites →
+          </button>
+        </div>
+      </div>
 
       {/* Crops Grid */}
       {filteredCrops.length === 0 ? (
@@ -251,53 +268,51 @@ useEffect(() => {
                   onClick={() => navigate(`/farm/${crop.farmer}`)}
                   className="border border-[#8fae8d] text-[#3e5e40] hover:bg-[#e6ece5] py-2 rounded-lg text-sm"
                 >
-                    View Farm Products
+                  View Farm Products
                 </button>
- 
               </div>
             </div>
           ))}
         </div>
       )}
 
- 
-
-      {/* Modal for Seller Info */}
-{selectedSeller && (
-  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded-xl shadow-lg w-96 relative border border-[#e0e6dc]">
-      <button
-        onClick={() => setSelectedSeller(null)}
-        className="absolute top-2 right-2 text-gray-500 hover:text-black"
-      >
-        ✕
-      </button>
-      <h2 className="text-xl font-semibold text-[#3e5e40] mb-4">
-        Seller Information
-      </h2>
-      <p className="text-gray-700">
-        <strong>Farmer:</strong> {selectedSeller.farmer}
-      </p>
-      <p className="text-gray-700">
-        <strong>Farm:</strong> {selectedSeller.farmName || "N/A"}
-      </p>
-      <p className="text-gray-700">
-        <strong>City:</strong> {selectedSeller.region || "N/A"}
-      </p>
-      <p className="text-gray-700">
-        <strong>Contact:</strong> {selectedSeller.contact || "N/A"}
-      </p>
-      <div className="mt-5 flex justify-center">
-        <button
-          onClick={() => setSelectedSeller(null)}
-          className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition-all"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      {/* Seller Info Modal */}
+      {selectedSeller && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-96 relative border border-[#e0e6dc]">
+            <button
+              onClick={() => setSelectedSeller(null)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-black"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-semibold text-[#3e5e40] mb-4">
+              Seller Information
+            </h2>
+            <p className="text-gray-700">
+              <strong>Farmer:</strong> {selectedSeller.farmer}
+            </p>
+            <p className="text-gray-700">
+              <strong>Farm:</strong> {selectedSeller.farmName || "N/A"}
+            </p>
+            <p className="text-gray-700">
+              <strong>City:</strong> {selectedSeller.region || "N/A"}
+            </p>
+            <p className="text-gray-700">
+              <strong>Contact:</strong>{" "}
+              {selectedSeller.contact || "N/A"}
+            </p>
+            <div className="mt-5 flex justify-center">
+              <button
+                onClick={() => setSelectedSeller(null)}
+                className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
