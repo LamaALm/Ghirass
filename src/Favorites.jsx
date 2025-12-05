@@ -7,10 +7,7 @@ export default function Favorites() {
   const [favorites, setFavorites] = useState([]);
 
   // نجيب المشتري الحالي
-  const buyer = JSON.parse(localStorage.getItem("buyerData") || "null");
-  const storageKey = buyer
-    ? `favorites_${buyer.username}`
-    : "favorites_guest";
+const buyerInfo = JSON.parse(localStorage.getItem("buyerData"));
 
 useEffect(() => {
   if (!buyerInfo) return;
