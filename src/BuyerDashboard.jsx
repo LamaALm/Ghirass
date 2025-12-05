@@ -5,37 +5,31 @@ import logo from "./Ghirass-Logo.png";
 export default function BuyerDashboard() {
   const navigate = useNavigate();
 
-  // المشتري الحالي (من تسجيل الدخول)
-  const buyer = JSON.parse(localStorage.getItem("buyerData") || "null");
+  // المشتري الحالي من localStorage (بعد الـ login)
+  const buyerInfo = JSON.parse(localStorage.getItem("buyerData"));
 
   const [crops, setCrops] = useState([]);
   const [filteredCrops, setFilteredCrops] = useState([]);
+
+  // هنا ما نخزن كل الكروبس، بس السجلات من جدول /favorites
+  // مثال: [{ id, buyerId, cropId }]
   const [favorites, setFavorites] = useState([]);
+
   const [selectedType, setSelectedType] = useState("All");
   const [selectedCity, setSelectedCity] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSeller, setSelectedSeller] = useState(null);
 
-  // مفتاح التخزين الخاص بهذا المشتري
-  const storageKey = buyer
-    ? `favorites_${buyer.username}`
-    : "favorites_guest";
-
-  // لو ما فيه مشتري مسجل دخول، رجّعيه لصفحة تسجيل المشتري
+  // لو واحد حاول يدخل بدون login
   useEffect(() => {
-    if (!buyer) {
+    if (!buyerInfo) {
       navigate("/buyer-login");
     }
-  }, [buyer, navigate]);
+  }, [buyerInfo, navigate]);
 
-  // تحميل المفضلات من localStorage لهذا المشتري
-  useEffect(() => {
-    const savedFavorites =
-      JSON.parse(localStorage.getItem(storageKey)) || [];
-    setFavorites(savedFavorites);
-  }, [storageKey]);
-
-  // Fetch crops
+  // =========================
+  // Fetch crops من السيرفر
+  // =========================
   useEffect(() => {
     fetch("https://ghirass-api.onrender.com/crops")
       .then((res) => res.json())
@@ -46,6 +40,27 @@ export default function BuyerDashboard() {
       .catch((err) => console.error("Error fetching crops:", err));
   }, []);
 
+  // =========================
+  // Fetch favorites للمشتري الحالي فقط
+  // =========================
+  const fetchFavorites = () => {
+    if (!buyerInfo?.id) return;
+
+    fetch(
+      `https://ghirass-api.onrender.com/favorites?buyerId=${buyerInfo.id}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setFavorites(data); // كل عنصر: { id, buyerId, cropId }
+      })
+      .catch((err) => console.error("Error fetching favorites:", err));
+  };
+
+  useEffect(() => {
+    fetchFavorites();
+  }, [buyerInfo]);
+
+  // Cities (Eastern Province)
   const cities = [
     "All",
     "Dammam",
@@ -57,7 +72,9 @@ export default function BuyerDashboard() {
     "Al Ahsa",
   ];
 
-  // فلترة
+  // =========================
+  // Handle filters
+  // =========================
   const handleFilter = (type, city, search) => {
     let filtered = crops;
 
@@ -85,25 +102,65 @@ export default function BuyerDashboard() {
     setFilteredCrops(filtered);
   };
 
+  // إعادة تطبيق الفلترة كل ما تغير شيء
   useEffect(() => {
     handleFilter(selectedType, selectedCity, searchTerm);
   }, [selectedType, selectedCity, searchTerm, crops]);
 
+  // =========================
+  // Helpers للفيفوريت
+  // =========================
+
+  // هل هذا الـ crop مضاف كمفضلة لهذا المشتري؟
+  const isFavorite = (cropId) =>
+    favorites.some((fav) => fav.cropId === cropId);
+
   // إضافة / إزالة من المفضلة
   const toggleFavorite = (crop) => {
-    let updatedFavorites;
-
-    if (favorites.find((f) => f.id === crop.id)) {
-      updatedFavorites = favorites.filter((f) => f.id !== crop.id);
-    } else {
-      updatedFavorites = [...favorites, crop];
+    if (!buyerInfo?.id) {
+      alert("Please log in as a buyer first.");
+      return;
     }
 
-    setFavorites(updatedFavorites);
-    localStorage.setItem(storageKey, JSON.stringify(updatedFavorites));
-  };
+    const existingFav = favorites.find((fav) => fav.cropId === crop.id);
 
-  const isFavorite = (id) => favorites.some((f) => f.id === id);
+    if (existingFav) {
+      // حذف من /favorites
+      fetch(
+        `https://ghirass-api.onrender.com/favorites/${existingFav.id}`,
+        {
+          method: "DELETE",
+        }
+      )
+        .then(() => {
+          // تحديث state محلي
+          setFavorites((prev) =>
+            prev.filter((fav) => fav.id !== existingFav.id)
+          );
+        })
+        .catch((err) =>
+          console.error("Error removing favorite:", err)
+        );
+    } else {
+      // إضافة جديدة
+      fetch("https://ghirass-api.onrender.com/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyerId: buyerInfo.id,
+          cropId: crop.id,
+          addedAt: new Date().toISOString(),
+        }),
+      })
+        .then((res) => res.json())
+        .then((newFav) => {
+          setFavorites((prev) => [...prev, newFav]);
+        })
+        .catch((err) =>
+          console.error("Error adding favorite:", err)
+        );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6 transition-all duration-300">
@@ -121,27 +178,18 @@ export default function BuyerDashboard() {
         />
       </div>
 
-      {buyer && (
-        <p className="text-gray-600 mb-2">
-          Welcome,{" "}
-          <span className="font-semibold text-[#3e5e40]">
-            {buyer.name}
-          </span>{" "}
-          from {buyer.city || "your city"} 🌿
-        </p>
-      )}
-
       <p className="text-gray-600 mb-6">
-        Explore fresh crops directly from local farmers.
+        Explore fresh crops directly from local farmers 🌿
       </p>
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-xl shadow border border-[#e0e6dc] flex flex-wrap items-center justify-between">
+        {/* Left Section: Search + Filters */}
         <div className="flex flex-wrap items-center gap-4">
-          {/* Search */}
+          {/* Search Box */}
           <div>
             <label className="text-sm font-medium text-gray-700 mr-2">
-              Search:
+              Type:
             </label>
             <input
               type="text"
@@ -152,20 +200,20 @@ export default function BuyerDashboard() {
             />
           </div>
 
-          {/* Type */}
+          {/* Type Filter */}
           <div>
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
               className="border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
             >
-              <option value="All">All Types</option>
+              <option value="All">All</option>
               <option value="Vegetable">Vegetable</option>
               <option value="Fruit">Fruit</option>
             </select>
           </div>
 
-          {/* City */}
+          {/* City Filter */}
           <div>
             <label className="text-sm font-medium text-gray-700 mr-2">
               City:
@@ -183,7 +231,7 @@ export default function BuyerDashboard() {
             </select>
           </div>
 
-          {/* Reset */}
+          {/* Reset Button */}
           <button
             onClick={() => {
               setSelectedType("All");
@@ -196,7 +244,7 @@ export default function BuyerDashboard() {
           </button>
         </div>
 
-        {/* Go to Favorites */}
+        {/* Right Section: Go to Favorites */}
         <div>
           <button
             onClick={() => navigate("/favorites")}
@@ -276,7 +324,7 @@ export default function BuyerDashboard() {
         </div>
       )}
 
-      {/* Seller Info Modal */}
+      {/* Modal for Seller Info */}
       {selectedSeller && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl shadow-lg w-96 relative border border-[#e0e6dc]">
@@ -299,8 +347,7 @@ export default function BuyerDashboard() {
               <strong>City:</strong> {selectedSeller.region || "N/A"}
             </p>
             <p className="text-gray-700">
-              <strong>Contact:</strong>{" "}
-              {selectedSeller.contact || "N/A"}
+              <strong>Contact:</strong> {selectedSeller.contact || "N/A"}
             </p>
             <div className="mt-5 flex justify-center">
               <button

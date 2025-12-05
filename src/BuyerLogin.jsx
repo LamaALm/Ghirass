@@ -1,68 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "./Ghirass-Logo.png";
+import { writeLog } from "./utils/logger";
 
-export default function BuyerDashboard() {
+export default function BuyerLogin() {
   const navigate = useNavigate();
 
-  // المشتري الحالي من localStorage (بعد الـ login)
-  const buyerInfo = JSON.parse(localStorage.getItem("buyerData"));
+  const [buyerData, setBuyerData] = useState({
+    name: "",
+    city: "",
+    contact: "",
+    username: "",
+    password: "",
+  });
 
-  const [crops, setCrops] = useState([]);
-  const [filteredCrops, setFilteredCrops] = useState([]);
-
-  // هنا ما نخزن كل الكروبس، بس السجلات من جدول /favorites
-  // مثال: [{ id, buyerId, cropId }]
-  const [favorites, setFavorites] = useState([]);
-
-  const [selectedType, setSelectedType] = useState("All");
-  const [selectedCity, setSelectedCity] = useState("All");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSeller, setSelectedSeller] = useState(null);
-
-  // لو واحد حاول يدخل بدون login
-  useEffect(() => {
-    if (!buyerInfo) {
-      navigate("/buyer-login");
-    }
-  }, [buyerInfo, navigate]);
-
-  // =========================
-  // Fetch crops من السيرفر
-  // =========================
-  useEffect(() => {
-    fetch("https://ghirass-api.onrender.com/crops")
-      .then((res) => res.json())
-      .then((data) => {
-        setCrops(data);
-        setFilteredCrops(data);
-      })
-      .catch((err) => console.error("Error fetching crops:", err));
-  }, []);
-
-  // =========================
-  // Fetch favorites للمشتري الحالي فقط
-  // =========================
-  const fetchFavorites = () => {
-    if (!buyerInfo?.id) return;
-
-    fetch(
-      `https://ghirass-api.onrender.com/favorites?buyerId=${buyerInfo.id}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setFavorites(data); // كل عنصر: { id, buyerId, cropId }
-      })
-      .catch((err) => console.error("Error fetching favorites:", err));
-  };
-
-  useEffect(() => {
-    fetchFavorites();
-  }, [buyerInfo]);
-
-  // Cities (Eastern Province)
   const cities = [
-    "All",
     "Dammam",
     "Dhahran",
     "Al Khobar",
@@ -72,294 +23,304 @@ export default function BuyerDashboard() {
     "Al Ahsa",
   ];
 
-  // =========================
-  // Handle filters
-  // =========================
-  const handleFilter = (type, city, search) => {
-    let filtered = crops;
+  const [errors, setErrors] = useState({});
+  const [isLoginMode, setIsLoginMode] = useState(true);
 
-    if (type && type !== "All") {
-      filtered = filtered.filter(
-        (crop) => crop.type.toLowerCase() === type.toLowerCase()
-      );
-    }
-
-    if (city && city !== "All") {
-      filtered = filtered.filter(
-        (crop) => crop.region?.toLowerCase() === city.toLowerCase()
-      );
-    }
-
-    if (search && search.trim() !== "") {
-      const term = search.toLowerCase();
-      filtered = filtered.filter(
-        (crop) =>
-          crop.name.toLowerCase().includes(term) ||
-          crop.type.toLowerCase().includes(term)
-      );
-    }
-
-    setFilteredCrops(filtered);
+  const handleChange = (e) => {
+    setBuyerData({ ...buyerData, [e.target.name]: e.target.value });
+    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
   };
 
-  // إعادة تطبيق الفلترة كل ما تغير شيء
-  useEffect(() => {
-    handleFilter(selectedType, selectedCity, searchTerm);
-  }, [selectedType, selectedCity, searchTerm, crops]);
+  // ---------- Validation ----------
+  const validateForm = () => {
+    const newErrors = {};
 
-  // =========================
-  // Helpers للفيفوريت
-  // =========================
-
-  // هل هذا الـ crop مضاف كمفضلة لهذا المشتري؟
-  const isFavorite = (cropId) =>
-    favorites.some((fav) => fav.cropId === cropId);
-
-  // إضافة / إزالة من المفضلة
-  const toggleFavorite = (crop) => {
-    if (!buyerInfo?.id) {
-      alert("Please log in as a buyer first.");
-      return;
+    // اسم كامل: حروف بأي لغة + مسافات
+    if (!buyerData.name.trim()) {
+      newErrors.name = "Full name is required.";
+    } else if (!/^[\p{L}\s]+$/u.test(buyerData.name.trim())) {
+      newErrors.name = "Full name must contain letters only.";
     }
 
-    const existingFav = favorites.find((fav) => fav.cropId === crop.id);
+    // city
+    if (!buyerData.city) {
+      newErrors.city = "Please select your city.";
+    }
 
-    if (existingFav) {
-      // حذف من /favorites
-      fetch(
-        `https://ghirass-api.onrender.com/favorites/${existingFav.id}`,
-        {
-          method: "DELETE",
+    // contact: 10 digits
+    if (!buyerData.contact.trim()) {
+      newErrors.contact = "Contact number is required.";
+    } else if (!/^\d{10}$/.test(buyerData.contact.trim())) {
+      newErrors.contact = "Contact number must be 10 digits (numbers only).";
+    }
+
+    // username
+    if (!buyerData.username.trim()) {
+      newErrors.username = "Username is required.";
+    }
+
+    // password
+    if (!buyerData.password.trim()) {
+      newErrors.password = "Password is required.";
+    } else if (buyerData.password.length < 4) {
+      newErrors.password = "Password must be at least 4 characters.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ---------- Sign up ----------
+  const handleSignUp = (e) => {
+    e.preventDefault();
+    console.log("⭐ BUYER handleSignUp clicked", buyerData);
+
+    if (!validateForm()) return;
+
+    const normalizedUsername = buyerData.username.trim().toLowerCase();
+
+    // 1) تأكد أن اليوزرنيم ما هو مكرر (case-insensitive)
+    fetch("https://ghirass-api.onrender.com/users")
+      .then((res) => res.json())
+      .then((existingUsers) => {
+        const usernameExists = existingUsers.some(
+          (u) => u.username && u.username.toLowerCase() === normalizedUsername
+        );
+
+        if (usernameExists) {
+          setErrors((prev) => ({
+            ...prev,
+            username: "This username is already taken.",
+          }));
+          return;
         }
-      )
-        .then(() => {
-          // تحديث state محلي
-          setFavorites((prev) =>
-            prev.filter((fav) => fav.id !== existingFav.id)
-          );
+
+        // 2) إنشاء buyer في /buyers
+        fetch("https://ghirass-api.onrender.com/buyers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...buyerData,
+            username: normalizedUsername,
+          }),
         })
-        .catch((err) =>
-          console.error("Error removing favorite:", err)
-        );
-    } else {
-      // إضافة جديدة
-      fetch("https://ghirass-api.onrender.com/favorites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          buyerId: buyerInfo.id,
-          cropId: crop.id,
-          addedAt: new Date().toISOString(),
-        }),
+          .then((res) => res.json())
+          .then(() => {
+            // 3) إضافة المستخدم إلى /users مع role = Buyer
+            fetch("https://ghirass-api.onrender.com/users", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                name: buyerData.name,
+                username: normalizedUsername,
+                city: buyerData.city,
+                role: "Buyer",
+              }),
+            });
+
+            alert("Account created successfully! You can now log in.");
+            setIsLoginMode(true);
+          })
+          .catch((err) => console.error("Error creating buyer:", err));
       })
-        .then((res) => res.json())
-        .then((newFav) => {
-          setFavorites((prev) => [...prev, newFav]);
-        })
-        .catch((err) =>
-          console.error("Error adding favorite:", err)
+      .catch((err) => console.error("Error checking username:", err));
+  };
+
+  // ---------- Login ----------
+  const handleLogin = (e) => {
+    e.preventDefault();
+
+    const inputUsername = buyerData.username.trim().toLowerCase();
+
+    fetch("https://ghirass-api.onrender.com/buyers")
+      .then((res) => res.json())
+      .then((buyers) => {
+        const matchedBuyer = buyers.find(
+          (b) =>
+            b.username &&
+            b.username.toLowerCase() === inputUsername &&
+            b.password === buyerData.password
         );
-    }
+
+        if (matchedBuyer) {
+          localStorage.setItem("buyerData", JSON.stringify(matchedBuyer));
+          alert(`Welcome, ${matchedBuyer.name}!`);
+          writeLog(matchedBuyer.username, "Buyer login success", "Info");
+          navigate("/buyer");
+        } else {
+          setErrors((prev) => ({
+            ...prev,
+            login: "Invalid username or password.",
+          }));
+          writeLog(
+            inputUsername,
+            "Failed buyer login attempt",
+            "Warning"
+          );
+        }
+      })
+      .catch((err) => console.error("Error logging in buyer:", err));
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6 transition-all duration-300">
-      {/* Header Row — Title (left) + Logo (right) */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold text-[#3e5e40]">
-          Buyer Dashboard
+    <div className="min-h-screen flex flex-col justify-center items-center bg-[#f6f7f3] px-4">
+      {/* Back arrow row */}
+      <button
+        onClick={() =>
+          isLoginMode ? navigate("/") : setIsLoginMode(true)
+        }
+        className="mb-4 text-sm text-gray-500 hover:text-[#3e5e40] self-start max-w-md w-full"
+      >
+        ← {isLoginMode ? "Back to main page" : "Back to login"}
+      </button>
+
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md border border-[#e0e6dc]">
+        <h1 className="text-3xl font-semibold text-[#3e5e40] text-center mb-2">
+          {isLoginMode ? "Buyer Login" : "Buyer Registration"}
         </h1>
+        <p className="text-gray-500 text-center mb-6">
+          {isLoginMode
+            ? "Please enter your buyer credentials to access the marketplace."
+            : "Please enter your information to create a buyer account."}
+        </p>
 
-        <img
-          src={logo}
-          alt="Ghirass Logo"
-          className="h-20 cursor-pointer hover:opacity-80 transition"
-          onClick={() => navigate("/")}
-        />
-      </div>
+        <form
+          onSubmit={isLoginMode ? handleLogin : handleSignUp}
+          className="space-y-4"
+        >
+          {/* Registration-only fields */}
+          {!isLoginMode && (
+            <>
+              <div>
+                <label className="block text-gray-700 text-sm mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={buyerData.name}
+                  onChange={handleChange}
+                  placeholder="Enter your full name"
+                  className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
+                />
+                {errors.name && (
+                  <p className="text-red-600 text-xs mt-1">{errors.name}</p>
+                )}
+              </div>
 
-      <p className="text-gray-600 mb-6">
-        Explore fresh crops directly from local farmers 🌿
-      </p>
+              <div>
+                <label className="block text-gray-700 text-sm mb-1">
+                  City
+                </label>
+                <select
+                  name="city"
+                  value={buyerData.city}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
+                >
+                  <option value="">Select your city</option>
+                  {cities.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                {errors.city && (
+                  <p className="text-red-600 text-xs mt-1">{errors.city}</p>
+                )}
+              </div>
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-xl shadow border border-[#e0e6dc] flex flex-wrap items-center justify-between">
-        {/* Left Section: Search + Filters */}
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Search Box */}
+              <div>
+                <label className="block text-gray-700 text-sm mb-1">
+                  Contact Number
+                </label>
+                <input
+                  type="text"
+                  name="contact"
+                  value={buyerData.contact}
+                  onChange={handleChange}
+                  placeholder="Enter your phone number"
+                  className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
+                />
+                {errors.contact && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {errors.contact}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Username */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mr-2">
-              Type:
+            <label className="block text-gray-700 text-sm mb-1">
+              Username
             </label>
             <input
               type="text"
-              placeholder="Search crops..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d] w-48"
+              name="username"
+              value={buyerData.username}
+              onChange={handleChange}
+              placeholder="Enter username"
+              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
             />
+            {errors.username && (
+              <p className="text-red-600 text-xs mt-1">
+                {errors.username}
+              </p>
+            )}
           </div>
 
-          {/* Type Filter */}
+          {/* Password */}
           <div>
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
-            >
-              <option value="All">All</option>
-              <option value="Vegetable">Vegetable</option>
-              <option value="Fruit">Fruit</option>
-            </select>
-          </div>
-
-          {/* City Filter */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 mr-2">
-              City:
+            <label className="block text-gray-700 text-sm mb-1">
+              Password
             </label>
-            <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
-              className="border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
-            >
-              {cities.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
+            <input
+              type="password"
+              name="password"
+              value={buyerData.password}
+              onChange={handleChange}
+              placeholder="Enter password"
+              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#8fae8d]"
+            />
+            {errors.password && (
+              <p className="text-red-600 text-xs mt-1">
+                {errors.password}
+              </p>
+            )}
           </div>
 
-          {/* Reset Button */}
+          {errors.login && (
+            <p className="text-red-600 text-xs">{errors.login}</p>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-[#8fae8d] hover:bg-[#7da07b] text-white py-2 rounded-lg font-medium transition-all duration-200"
+          >
+            {isLoginMode ? "Login" : "Register"}
+          </button>
+        </form>
+
+        <div className="text-center mt-4">
           <button
             onClick={() => {
-              setSelectedType("All");
-              setSelectedCity("All");
-              setSearchTerm("");
+              setIsLoginMode(!isLoginMode);
+              setErrors({});
             }}
-            className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition-all"
-          >
-            Reset Filters
-          </button>
-        </div>
-
-        {/* Right Section: Go to Favorites */}
-        <div>
-          <button
-            onClick={() => navigate("/favorites")}
             className="text-[#3e5e40] hover:underline text-sm"
           >
-            Go to Favorites →
+            {isLoginMode
+              ? "Don't have an account? Register"
+              : "Already have an account? Log in"}
           </button>
         </div>
       </div>
 
-      {/* Crops Grid */}
-      {filteredCrops.length === 0 ? (
-        <p className="text-gray-500 italic mt-6">No crops found.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-          {filteredCrops.map((crop) => (
-            <div
-              key={crop.id}
-              className="bg-white rounded-xl shadow border border-[#e0e6dc] p-4 hover:shadow-md transition-all relative"
-            >
-              {/* Favorite button */}
-              <button
-                onClick={() => toggleFavorite(crop)}
-                className={`absolute top-2 right-2 text-lg ${
-                  isFavorite(crop.id)
-                    ? "text-red-500"
-                    : "text-gray-400 hover:text-red-400"
-                }`}
-              >
-                {isFavorite(crop.id) ? "♥" : "♡"}
-              </button>
-
-              <img
-                src={crop.image}
-                alt={crop.name}
-                className="w-full h-36 object-cover rounded-lg mb-3"
-              />
-              <h3 className="font-semibold text-[#3e5e40] text-lg">
-                {crop.name}
-              </h3>
-              <p className="text-gray-600 text-sm">{crop.type}</p>
-              <p className="text-[#678a66] text-sm font-medium mb-2">
-                {crop.price} SAR/kg
-              </p>
-
-              <div className="text-sm text-gray-700 space-y-1 mb-3">
-                <p>
-                  <strong>Farmer:</strong> {crop.farmer || "Unknown"}
-                </p>
-                {crop.farmName && (
-                  <p>
-                    <strong>Farm:</strong> {crop.farmName}
-                  </p>
-                )}
-                <p>
-                  <strong>City:</strong> {crop.region || "N/A"}
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => setSelectedSeller(crop)}
-                  className="bg-[#8fae8d] hover:bg-[#7da07b] text-white py-2 rounded-lg text-sm"
-                >
-                  View Seller Info
-                </button>
-
-                <button
-                  onClick={() => navigate(`/farm/${crop.farmer}`)}
-                  className="border border-[#8fae8d] text-[#3e5e40] hover:bg-[#e6ece5] py-2 rounded-lg text-sm"
-                >
-                  View Farm Products
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Modal for Seller Info */}
-      {selectedSeller && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-96 relative border border-[#e0e6dc]">
-            <button
-              onClick={() => setSelectedSeller(null)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-black"
-            >
-              ✕
-            </button>
-            <h2 className="text-xl font-semibold text-[#3e5e40] mb-4">
-              Seller Information
-            </h2>
-            <p className="text-gray-700">
-              <strong>Farmer:</strong> {selectedSeller.farmer}
-            </p>
-            <p className="text-gray-700">
-              <strong>Farm:</strong> {selectedSeller.farmName || "N/A"}
-            </p>
-            <p className="text-gray-700">
-              <strong>City:</strong> {selectedSeller.region || "N/A"}
-            </p>
-            <p className="text-gray-700">
-              <strong>Contact:</strong> {selectedSeller.contact || "N/A"}
-            </p>
-            <div className="mt-5 flex justify-center">
-              <button
-                onClick={() => setSelectedSeller(null)}
-                className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition-all"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <p className="text-gray-500 text-sm mt-8">
+        © 2025 Ghirass Smart Agriculture Project
+      </p>
     </div>
   );
 }
