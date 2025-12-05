@@ -1,40 +1,56 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import logo from "./Ghirass-Logo.png";
 
 export default function FarmPage() {
-  const { farmer } = useParams();
+  const { farmerId } = useParams();
   const navigate = useNavigate();
-  const [farmerCrops, setFarmerCrops] = useState([]);
+  const [crops, setCrops] = useState([]);
+  const [farmerName, setFarmerName] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:3001/crops")
+    fetch("https://ghirass-api.onrender.com/crops")
       .then((res) => res.json())
       .then((data) => {
-        const filtered = data.filter((crop) => crop.farmer === farmer);
-        setFarmerCrops(filtered);
+        const filtered = data.filter((c) => c.farmerId === farmerId);
+        setCrops(filtered);
+        if (filtered.length > 0) {
+          setFarmerName(filtered[0].farmer || "Farmer");
+        }
       })
-      .catch((err) => console.error("Error fetching crops:", err));
-  }, [farmer]);
+      .catch((err) => console.error("Error fetching farm crops:", err));
+  }, [farmerId]);
 
   return (
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-[#3e5e40]">
-          {farmer}'s Farm
-        </h1>
-        <button
-          onClick={() => navigate(-1)}
-          className="bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition-all"
-        >
-          ← Back
-        </button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-[#3e5e40]">
+            {farmerName ? `${farmerName}'s Farm` : "Farm Products"}
+          </h1>
+          <button
+            onClick={() => navigate(-1)}
+            className="text-sm text-gray-600 hover:text-[#3e5e40] mt-1"
+          >
+            ← Back
+          </button>
+        </div>
+
+        <img
+          src={logo}
+          alt="Ghirass Logo"
+          className="h-16 cursor-pointer hover:opacity-80 transition"
+          onClick={() => navigate("/")}
+        />
       </div>
 
-      {farmerCrops.length === 0 ? (
-        <p className="text-gray-500 italic">No crops found for this farm.</p>
+      {crops.length === 0 ? (
+        <p className="text-gray-500 italic mt-4">
+          No products found for this farm.
+        </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {farmerCrops.map((crop) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+          {crops.map((crop) => (
             <div
               key={crop.id}
               className="bg-white rounded-xl shadow border border-[#e0e6dc] p-4 hover:shadow-md transition-all"
@@ -52,7 +68,10 @@ export default function FarmPage() {
                 {crop.price} SAR/kg
               </p>
               <p className="text-sm text-gray-700">
-                <strong>City:</strong> {crop.region}
+                <strong>City:</strong> {crop.region || "N/A"}
+              </p>
+              <p className="text-sm text-gray-700">
+                <strong>Contact:</strong> {crop.contact || "N/A"}
               </p>
             </div>
           ))}

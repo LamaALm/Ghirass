@@ -20,6 +20,14 @@ export default function BuyerDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSeller, setSelectedSeller] = useState(null);
 
+  const byuerInfo = JSON.parse(localStorage.getItem("buyerData"));
+
+  const handleLogout = () => {
+    localStorage.removeItem("buyerData");
+    localStorage.removeItem("buyerFavorites");
+    navigate("/buyer-login");
+  }
+
   // لو واحد حاول يدخل بدون login
   useEffect(() => {
     if (!buyerInfo) {
@@ -166,16 +174,39 @@ export default function BuyerDashboard() {
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6 transition-all duration-300">
       {/* Header Row — Title (left) + Logo (right) */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold text-[#3e5e40]">
+        <div>
+          <h1 className="text-3xl font-semibold text-[#3e5e40]">
           Buyer Dashboard
         </h1>
+        {buyerInfo && (
+          <p className="text-sm text-gray-600 mt-1">
+            Welcome, {" "}
+            <span className="font-semiblod text-[#3e5e40]">
+              {buyerInfo.name}
+            </span>
+            {buyerInfo.city ? ` from ${buyerInfo.city}` : ""}
+          </p>
+        )}
+        </div>
+        
+        <div className="flex item-center gap-4">
+          <button
+          onClick={handleLogout}
+          className="text-sm bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition"
+          >
+            Logout
+          </button>
 
-        <img
+          <img
           src={logo}
           alt="Ghirass Logo"
           className="h-20 cursor-pointer hover:opacity-80 transition"
           onClick={() => navigate("/")}
         />
+
+        </div>
+
+        
       </div>
 
       <p className="text-gray-600 mb-6">
@@ -313,7 +344,7 @@ export default function BuyerDashboard() {
                 </button>
 
                 <button
-                  onClick={() => navigate(`/farm/${crop.farmer}`)}
+                  onClick={() => navigate(`/farm/${crop.farmerId}`)}
                   className="border border-[#8fae8d] text-[#3e5e40] hover:bg-[#e6ece5] py-2 rounded-lg text-sm"
                 >
                   View Farm Products

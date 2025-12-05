@@ -25,7 +25,7 @@ function App() {
         <Route path="/buyer-login" element={<BuyerLogin />} />
         <Route path="/buyer" element={<BuyerDashboard />} />
         <Route path="/favorites" element={<Favorites />} />
-        <Route path="/farm/:farmer" element={<FarmPage />} />
+        <Route path="/farm/:farmerId" element={<FarmPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/government" element={<GovernmentDashboard />} />
         <Route path="/admin-pin" element={<AdminPin />} />
