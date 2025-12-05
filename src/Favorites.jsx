@@ -12,10 +12,13 @@ export default function Favorites() {
     ? `favorites_${buyer.username}`
     : "favorites_guest";
 
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(storageKey)) || [];
-    setFavorites(saved);
-  }, [storageKey]);
+useEffect(() => {
+  if (!buyerInfo) return;
+
+  const key = `favorites_${buyerInfo.username}`;
+  const saved = JSON.parse(localStorage.getItem(key)) || [];
+  setFavorites(saved);
+}, [buyerInfo]);
 
   return (
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6">

@@ -20,7 +20,6 @@ export default function BuyerDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSeller, setSelectedSeller] = useState(null);
 
-  const byuerInfo = JSON.parse(localStorage.getItem("buyerData"));
 
   const handleLogout = () => {
     localStorage.removeItem("buyerData");
@@ -48,25 +47,13 @@ export default function BuyerDashboard() {
       .catch((err) => console.error("Error fetching crops:", err));
   }, []);
 
-  // =========================
-  // Fetch favorites للمشتري الحالي فقط
-  // =========================
-  const fetchFavorites = () => {
-    if (!buyerInfo?.id) return;
+useEffect(() => {
+  if (!buyerInfo) return;
 
-    fetch(
-      `https://ghirass-api.onrender.com/favorites?buyerId=${buyerInfo.id}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setFavorites(data); // كل عنصر: { id, buyerId, cropId }
-      })
-      .catch((err) => console.error("Error fetching favorites:", err));
-  };
-
-  useEffect(() => {
-    fetchFavorites();
-  }, [buyerInfo]);
+  const key = `favorites_${buyerInfo.username}`;
+  const saved = JSON.parse(localStorage.getItem(key)) || [];
+  setFavorites(saved);
+}, [buyerInfo]);
 
   // Cities (Eastern Province)
   const cities = [
@@ -123,52 +110,24 @@ export default function BuyerDashboard() {
   const isFavorite = (cropId) =>
     favorites.some((fav) => fav.cropId === cropId);
 
-  // إضافة / إزالة من المفضلة
-  const toggleFavorite = (crop) => {
-    if (!buyerInfo?.id) {
-      alert("Please log in as a buyer first.");
-      return;
-    }
+  
+const toggleFavorite = (crop) => {
+  if (!buyerInfo) return; // احتياط
 
-    const existingFav = favorites.find((fav) => fav.cropId === crop.id);
+  const key = `favorites_${buyerInfo.username}`;
 
-    if (existingFav) {
-      // حذف من /favorites
-      fetch(
-        `https://ghirass-api.onrender.com/favorites/${existingFav.id}`,
-        {
-          method: "DELETE",
-        }
-      )
-        .then(() => {
-          // تحديث state محلي
-          setFavorites((prev) =>
-            prev.filter((fav) => fav.id !== existingFav.id)
-          );
-        })
-        .catch((err) =>
-          console.error("Error removing favorite:", err)
-        );
-    } else {
-      // إضافة جديدة
-      fetch("https://ghirass-api.onrender.com/favorites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          buyerId: buyerInfo.id,
-          cropId: crop.id,
-          addedAt: new Date().toISOString(),
-        }),
-      })
-        .then((res) => res.json())
-        .then((newFav) => {
-          setFavorites((prev) => [...prev, newFav]);
-        })
-        .catch((err) =>
-          console.error("Error adding favorite:", err)
-        );
-    }
-  };
+  let updated;
+  if (favorites.some((f) => f.id === crop.id)) {
+    // موجود → نشيله
+    updated = favorites.filter((f) => f.id !== crop.id);
+  } else {
+    // مو موجود → نضيفه
+    updated = [...favorites, crop];
+  }
+
+  setFavorites(updated);
+  localStorage.setItem(key, JSON.stringify(updated));
+};
 
   return (
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6 transition-all duration-300">
