@@ -3,12 +3,44 @@ import { useNavigate } from "react-router-dom";
 
 export default function Favorites() {
   const navigate = useNavigate();
-  const [favorites, setFavorites] = useState([]);
+  const [favoriteCrops, setFavoriteCrops] = useState([]);
+
+  // المشتري الحالي (لازم يكون مسوي login)
+  const buyerInfo = JSON.parse(localStorage.getItem("buyerData"));
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("favorites")) || [];
-    setFavorites(saved);
-  }, []);
+    // لو ما فيه مشتري مسجّل دخول → رجعيه لصفحة تسجيل الدخول
+    if (!buyerInfo) {
+      navigate("/buyer-login");
+      return;
+    }
+
+    // نجيب المفضلات + المحاصيل
+    const fetchFavoritesAndCrops = async () => {
+      try {
+        const [favoritesRes, cropsRes] = await Promise.all([
+          fetch(
+            `https://ghirass-api.onrender.com/favorites?buyerId=${buyerInfo.id}`
+          ),
+          fetch("https://ghirass-api.onrender.com/crops"),
+        ]);
+
+        const favoritesData = await favoritesRes.json(); // [{id,buyerId,cropId,...}]
+        const cropsData = await cropsRes.json();         // كل المحاصيل
+
+        // نركّب: نجيب بيانات المحصول لكل favorite
+        const cropsForBuyer = favoritesData
+          .map((fav) => cropsData.find((crop) => crop.id === fav.cropId))
+          .filter(Boolean); // نشيل أي undefined لو فيه مشكلة
+
+        setFavoriteCrops(cropsForBuyer);
+      } catch (err) {
+        console.error("Error loading favorites:", err);
+      }
+    };
+
+    fetchFavoritesAndCrops();
+  }, [buyerInfo, navigate]);
 
   return (
     <div className="min-h-screen bg-[#f6f7f3] p-6 space-y-6">
@@ -22,13 +54,13 @@ export default function Favorites() {
         </button>
       </div>
 
-      {favorites.length === 0 ? (
+      {favoriteCrops.length === 0 ? (
         <p className="text-gray-500 italic mt-6">
           You haven’t added any favorites yet.
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-          {favorites.map((crop) => (
+          {favoriteCrops.map((crop) => (
             <div
               key={crop.id}
               className="bg-white rounded-xl shadow border border-[#e0e6dc] p-4 hover:shadow-md transition-all"
@@ -48,6 +80,11 @@ export default function Favorites() {
               <p className="text-sm text-gray-700">
                 <strong>Farmer:</strong> {crop.farmer}
               </p>
+              {crop.region && (
+                <p className="text-sm text-gray-700">
+                  <strong>City:</strong> {crop.region}
+                </p>
+              )}
             </div>
           ))}
         </div>
