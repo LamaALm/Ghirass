@@ -5,12 +5,18 @@ import logo from "./Ghirass-Logo.png";
 export default function Favorites() {
   const navigate = useNavigate();
   const [favorites, setFavorites] = useState([]);
+  const [buyerInfo, setBuyerInfo] = useState(null);
 
-  // نجيب المشتري الحالي
-const buyerInfo = JSON.parse(localStorage.getItem("buyerData"));
 
 useEffect(() => {
-  if (!buyerInfo) return;
+  const stored = localStorage.getItem("buyerData");
+  if (stored) {
+    setBuyerInfo(JSON.parse(stored));
+  }
+}, []);
+
+useEffect(() => {
+  if (!buyerInfo || !buyerInfo.username) return;
 
   const key = `favorites_${buyerInfo.username}`;
   const saved = JSON.parse(localStorage.getItem(key)) || [];

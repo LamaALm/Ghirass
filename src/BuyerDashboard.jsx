@@ -5,8 +5,15 @@ import logo from "./Ghirass-Logo.png";
 export default function BuyerDashboard() {
   const navigate = useNavigate();
 
-  // المشتري الحالي من localStorage (بعد الـ login)
-  const buyerInfo = JSON.parse(localStorage.getItem("buyerData"));
+const [buyerInfo, setBuyerInfo] = useState(null);
+
+// نجيب بيانات المشتري بعد ما يحمل الكومبوننت
+useEffect(() => {
+  const stored = localStorage.getItem("buyerData");
+  if (stored) {
+    setBuyerInfo(JSON.parse(stored));
+  }
+}, []);
 
   const [crops, setCrops] = useState([]);
   const [filteredCrops, setFilteredCrops] = useState([]);
@@ -48,7 +55,7 @@ export default function BuyerDashboard() {
   }, []);
 
 useEffect(() => {
-  if (!buyerInfo) return;
+  if (!buyerInfo || !buyerInfo.username) return;
 
   const key = `favorites_${buyerInfo.username}`;
   const saved = JSON.parse(localStorage.getItem(key)) || [];
@@ -107,21 +114,21 @@ useEffect(() => {
   // =========================
 
   // هل هذا الـ crop مضاف كمفضلة لهذا المشتري؟
-  const isFavorite = (cropId) =>
-    favorites.some((fav) => fav.cropId === cropId);
+const isFavorite = (id) => favorites.some((f) => f.id === id);
 
   
 const toggleFavorite = (crop) => {
-  if (!buyerInfo) return; // احتياط
+  if (!buyerInfo || !buyerInfo.username) {
+    alert("Please log in as a buyer first.");
+    return;
+  }
 
   const key = `favorites_${buyerInfo.username}`;
 
   let updated;
   if (favorites.some((f) => f.id === crop.id)) {
-    // موجود → نشيله
     updated = favorites.filter((f) => f.id !== crop.id);
   } else {
-    // مو موجود → نضيفه
     updated = [...favorites, crop];
   }
 
