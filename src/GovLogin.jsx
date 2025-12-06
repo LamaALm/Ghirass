@@ -7,28 +7,37 @@ export default function GovLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setError("");
+const handleLogin = (e) => {
+  e.preventDefault();
+  setError("");
 
-    fetch(
-      `https://ghirass-api.onrender.com/users?username=${username}&password=${password}&role=Government`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.length > 0) {
-          const user = data[0];
-          localStorage.setItem("currentUser", JSON.stringify(user));
-          navigate("/gov-pin");
-        } else {
-          setError("Invalid government credentials.");
-        }
-      })
-      .catch((err) => {
-        console.error("Login error:", err);
-        setError("Error connecting to the server.");
-      });
-  };
+  const inputUsername = username.trim().toLowerCase();
+  const inputPassword = password;
+
+  // Fetch all users and filter manually (case-insensitive)
+  fetch("https://ghirass-api.onrender.com/users")
+    .then((res) => res.json())
+    .then((users) => {
+      const matched = users.find(
+        (u) =>
+          u.role === "Government" &&
+          u.username &&
+          u.username.trim().toLowerCase() === inputUsername &&
+          u.password === inputPassword
+      );
+
+      if (matched) {
+        localStorage.setItem("currentUser", JSON.stringify(matched));
+        navigate("/gov-pin");
+      } else {
+        setError("Invalid government credentials.");
+      }
+    })
+    .catch((err) => {
+      console.error("Login error:", err);
+      setError("Error connecting to the server.");
+    });
+};
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-[#f6f7f3] px-4">

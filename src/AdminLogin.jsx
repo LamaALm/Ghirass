@@ -7,28 +7,37 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setError("");
+const handleLogin = (e) => {
+  e.preventDefault();
+  setError("");
 
-    fetch(
-      `https://ghirass-api.onrender.com/users?username=${username}&password=${password}&role=Admin`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.length > 0) {
-          const user = data[0];
-          localStorage.setItem("currentUser", JSON.stringify(user));
-          navigate("/admin-pin");
-        } else {
-          setError("Invalid admin credentials.");
-        }
-      })
-      .catch((err) => {
-        console.error("Login error:", err);
-        setError("Error connecting to the server.");
-      });
-  };
+  const inputUsername = username.trim().toLowerCase();
+  const inputPassword = password;
+
+
+  fetch("https://ghirass-api.onrender.com/users")
+    .then((res) => res.json())
+    .then((users) => {
+      const matched = users.find(
+        (u) =>
+          u.role === "Admin" &&
+          u.username &&
+          u.username.trim().toLowerCase() === inputUsername &&
+          u.password === inputPassword
+      );
+
+      if (matched) {
+        localStorage.setItem("currentUser", JSON.stringify(matched));
+        navigate("/admin-pin");
+      } else {
+        setError("Invalid admin credentials.");
+      }
+    })
+    .catch((err) => {
+      console.error("Login error:", err);
+      setError("Error connecting to the server.");
+    });
+};
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-[#f6f7f3] px-4">
