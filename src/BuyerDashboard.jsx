@@ -7,7 +7,6 @@ export default function BuyerDashboard() {
 
 const [buyerInfo, setBuyerInfo] = useState(null);
 
-// نجيب بيانات المشتري بعد ما يحمل الكومبوننت
 useEffect(() => {
   const stored = localStorage.getItem("buyerData");
   if (stored) {
@@ -18,8 +17,7 @@ useEffect(() => {
   const [crops, setCrops] = useState([]);
   const [filteredCrops, setFilteredCrops] = useState([]);
 
-  // هنا ما نخزن كل الكروبس، بس السجلات من جدول /favorites
-  // مثال: [{ id, buyerId, cropId }]
+  //  [{ id, buyerId, cropId }]
   const [favorites, setFavorites] = useState([]);
 
   const [selectedType, setSelectedType] = useState("All");
@@ -37,7 +35,7 @@ useEffect(() => {
 
 
   // =========================
-  // Fetch crops من السيرفر
+  // Fetch crops  
   // =========================
   useEffect(() => {
     fetch("https://ghirass-api.onrender.com/crops")
@@ -99,16 +97,11 @@ useEffect(() => {
     setFilteredCrops(filtered);
   };
 
-  // إعادة تطبيق الفلترة كل ما تغير شيء
   useEffect(() => {
     handleFilter(selectedType, selectedCity, searchTerm);
   }, [selectedType, selectedCity, searchTerm, crops]);
 
-  // =========================
-  // Helpers للفيفوريت
-  // =========================
 
-  // هل هذا الـ crop مضاف كمفضلة لهذا المشتري؟
 const isFavorite = (id) => favorites.some((f) => f.id === id);
 
   

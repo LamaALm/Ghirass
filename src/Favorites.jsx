@@ -21,7 +21,6 @@ useEffect(() => {
   const key = `favorites_${buyerInfo.username}`;
   const saved = JSON.parse(localStorage.getItem(key)) || [];
 
-  // نطلع بس IDs من اللي مخزنينهم
   const favoriteIds = saved.map((item) => item.id);
 
   if (favoriteIds.length === 0) {
@@ -29,7 +28,6 @@ useEffect(() => {
     return;
   }
 
-  // نجيب كل المحاصيل من الـ backend ونختار بس اللي IDs حقتها موجودة في المفضلة
   fetch("https://ghirass-api.onrender.com/crops")
     .then((res) => res.json())
     .then((allCrops) => {

@@ -8,7 +8,7 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,        // ← أضفنا Legend
+  Legend,        
 } from "recharts";
 
 

@@ -89,7 +89,6 @@ const handleSignUp = (e) => {
 
   if (!validateForm()) return;
 
-  // نحول اليوزرنيم إلى lowercase مرة واحدة
   const normalizedUsername = farmerData.username.trim().toLowerCase();
 
   if (
@@ -127,7 +126,7 @@ const handleSignUp = (e) => {
             return;
           }
 
-          // Step 2 — Create farmer (نخزن اليوزرنيم بشكل lowercase)
+          // Step 2 — Create farmer 
           fetch("https://ghirass-api.onrender.com/farmers", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -138,7 +137,7 @@ const handleSignUp = (e) => {
           })
             .then((res) => res.json())
             .then((data) => {
-              // Step 3 — Add to users table (برضه lowercase)
+              // Step 3 — Add to users table
               fetch("https://ghirass-api.onrender.com/users", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -167,7 +166,6 @@ const handleLogin = (e) => {
 
   const inputUsername = farmerData.username.trim().toLowerCase();
 
-  // نجيب كل المزارعين ونفلتر بالفرونت (case-insensitive)
   fetch("https://ghirass-api.onrender.com/farmers")
     .then((res) => res.json())
     .then((farmers) => {
@@ -184,11 +182,9 @@ const handleLogin = (e) => {
   navigate("/farmer");
   writeLog(matchedFarmer.username, "Farmer login success", "Info");
 
-  // مهم: نمسح رسالة الخطأ لو كان فيه واحدة قديمة
   setErrors((prev) => ({ ...prev, login: "" }));
 
 } else {
-  // بدل alert نخزن الرسالة في errors.login
   setErrors((prev) => ({
     ...prev,
     login: "Invalid username or password.",

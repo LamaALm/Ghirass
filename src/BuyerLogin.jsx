@@ -35,7 +35,6 @@ export default function BuyerLogin() {
   const validateForm = () => {
     const newErrors = {};
 
-    // اسم كامل: حروف بأي لغة + مسافات
     if (!buyerData.name.trim()) {
       newErrors.name = "Full name is required.";
     } else if (!/^[\p{L}\s]+$/u.test(buyerData.name.trim())) {
@@ -79,7 +78,6 @@ export default function BuyerLogin() {
 
     const normalizedUsername = buyerData.username.trim().toLowerCase();
 
-    // 1) تأكد أن اليوزرنيم ما هو مكرر (case-insensitive)
     fetch("https://ghirass-api.onrender.com/users")
       .then((res) => res.json())
       .then((existingUsers) => {
@@ -95,7 +93,6 @@ export default function BuyerLogin() {
           return;
         }
 
-        // 2) إنشاء buyer في /buyers
         fetch("https://ghirass-api.onrender.com/buyers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -106,7 +103,6 @@ export default function BuyerLogin() {
         })
           .then((res) => res.json())
           .then(() => {
-            // 3) إضافة المستخدم إلى /users مع role = Buyer
             fetch("https://ghirass-api.onrender.com/users", {
               method: "POST",
               headers: { "Content-Type": "application/json" },

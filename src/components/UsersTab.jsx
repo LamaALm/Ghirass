@@ -61,7 +61,7 @@ const handleDeleteUser = async (user) => {
     }
 
     alert("User and related data deleted successfully.");
-    fetchUsers(); // عشان يحدث جدول اليوزرز بعد الحذف
+    fetchUsers(); 
 
   } catch (err) {
     console.error("Error deleting user:", err);
