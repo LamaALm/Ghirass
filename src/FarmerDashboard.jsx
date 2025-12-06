@@ -31,20 +31,35 @@ const [isManualMode, setIsManualMode] = useState(false);
 
 
 
-
+const handleLogout = () => {
+  localStorage.removeItem("farmerData");
+  window.location.href = "/"; 
+};
 
   // UI control states
   const [showForm, setShowForm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
   // Data for chart and alerts
-  const [data] = useState([
-    { day: "Sat", humidity: 45 },
-    { day: "Sun", humidity: 50 },
-    { day: "Mon", humidity: 47 },
-    { day: "Tue", humidity: 55 },
-    { day: "Wed", humidity: 48 },
-  ]);
+// Generate last 5 days dynamically
+const generateLast5Days = () => {
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const today = new Date().getDay(); // 0–6
+  let result = [];
+
+  for (let i = 0; i < 5; i++) {
+    const index = (today - i + 7) % 7; 
+    result.push({
+      day: days[index],
+      soil: Math.floor(Math.random() * (65 - 30 + 1)) + 30, // random soil %
+    });
+  }
+
+  return result.reverse(); 
+};
+
+// Soil moisture history (auto-generated)
+const [soilHistory] = useState(generateLast5Days());
   const [alerts] = useState([
     { id: 1, message: "Possible pest detected near Lettuce area", date: "2025-11-01" },
     { id: 2, message: "Humidity dropped below safe level", date: "2025-10-31" },
@@ -121,6 +136,13 @@ const [isManualMode, setIsManualMode] = useState(false);
       return;
     }
 
+    // Price must be a number > 0
+const priceValue = Number(newCrop.price);
+if (isNaN(priceValue) || priceValue <= 0) {
+  alert("Price must be a positive number greater than zero.");
+  return;
+}
+
     const cropData = {
         ...newCrop,
         farmerId: farmerInfo?.id,
@@ -178,6 +200,12 @@ const [isManualMode, setIsManualMode] = useState(false);
   };
   const handleUpdate = (e) => {
     e.preventDefault();
+    // Price validation for Edit Mode
+const editedPrice = Number(cropToEdit.price);
+if (isNaN(editedPrice) || editedPrice <= 0) {
+  alert("Price must be a positive number greater than zero.");
+  return;
+}
     fetch(`https://ghirass-api.onrender.com/crops/${cropToEdit.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -243,13 +271,22 @@ useEffect(() => {
     Farmer Dashboard
   </h1>
 
-  {/* Logo on the right */}
-  <img
-    src={logo}
-    alt="Ghirass Logo"
-    className="h-20 cursor-pointer hover:opacity-80 transition"
-    onClick={() => navigate("/")}
-  />
+    {/* Right: Logout + Logo */}
+  <div className="flex items-center gap-4">
+    <button
+      onClick={handleLogout}
+      className="text-sm text-[#3e5e40] underline underline-offset-2 hover:text-[#2c4630] transition"
+    >
+      Logout
+    </button>
+
+    <img
+      src={logo}
+      alt="Ghirass Logo"
+      className="h-20 cursor-pointer hover:opacity-80 transition"
+      onClick={() => navigate("/")}
+    />
+  </div>
 </div>
 
       
@@ -339,21 +376,7 @@ useEffect(() => {
   </p>
 </div>
 
-
-      {/* Humidity chart */}
-      <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Humidity History</h2>
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={data}>
-            <XAxis dataKey="day" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="humidity" fill="#8fae8d" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Pest alerts */}
+{/* Pest alerts */}
       <div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Pest Alerts</h2>
         {alerts.length === 0 ? (
@@ -368,6 +391,23 @@ useEffect(() => {
           </ul>
         )}
       </div>
+
+      {/* Soil Moisture chart */}
+<div className="bg-white p-6 rounded-xl shadow border border-[#e0e6dc]">
+  <h2 className="text-xl font-semibold text-gray-800 mb-4">
+    Soil Moisture History
+  </h2>
+  <ResponsiveContainer width="100%" height={250}>
+    <BarChart data={soilHistory}>
+      <XAxis dataKey="day" />
+      <YAxis />
+      <Tooltip />
+      <Bar dataKey="soil" fill="#8fae8d" />
+    </BarChart>
+  </ResponsiveContainer>
+</div>
+
+  
 
       {/* Crop management */}
       <div className="bg-white p-4 rounded-xl shadow border border-[#e0e6dc] flex items-center justify-between">

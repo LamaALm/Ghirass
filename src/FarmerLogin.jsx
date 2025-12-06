@@ -179,19 +179,27 @@ const handleLogin = (e) => {
       );
 
       if (matchedFarmer) {
-        // Successful login
-        localStorage.setItem("farmerData", JSON.stringify(matchedFarmer));
-        alert(`Welcome back, ${matchedFarmer.name}!`);
-        navigate("/farmer");
-        writeLog(matchedFarmer.username, "Farmer login success", "Info");
-      } else {
-        alert("Invalid username or password.");
-        writeLog(
-          inputUsername,
-          "Failed farmer login attempt",
-          "Warning"
-        );
-      }
+  localStorage.setItem("farmerData", JSON.stringify(matchedFarmer));
+  alert(`Welcome back, ${matchedFarmer.name}!`);
+  navigate("/farmer");
+  writeLog(matchedFarmer.username, "Farmer login success", "Info");
+
+  // مهم: نمسح رسالة الخطأ لو كان فيه واحدة قديمة
+  setErrors((prev) => ({ ...prev, login: "" }));
+
+} else {
+  // بدل alert نخزن الرسالة في errors.login
+  setErrors((prev) => ({
+    ...prev,
+    login: "Invalid username or password.",
+  }));
+
+  writeLog(
+    inputUsername,
+    "Failed farmer login attempt",
+    "Warning"
+  );
+}
     })
     .catch((err) => console.error("Error logging in:", err));
 };
@@ -199,18 +207,19 @@ const handleLogin = (e) => {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-[#f6f7f3] px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md border border-[#e0e6dc]">
-        {isLoginMode && (
+      {isLoginMode && (
           <div className="w-full max-w-md mb-4">
-            <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-1 text-gray-600 hover:text-[#3e5e40] transition text-sm"
-            >
-              <span className="text-base">←</span>
-              <span>Back to main page</span>
-            </button>
-            </div>
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-1 text-gray-600 hover:text-[#3e5e40] transition text-sm"
+        >
+          <span className="text-base">←</span>
+          <span>Back to main page</span>
+        </button>
+      </div>
         )}
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md border border-[#e0e6dc]">
+       
         {!isLoginMode && (
           <button
           type="button"
@@ -347,6 +356,9 @@ const handleLogin = (e) => {
             />
             {errors.password && <p className="text-red-600 text-sm">{errors.password}</p>}
           </div>
+          {errors.login && (
+  <p className="text-red-600 text-sm">{errors.login}</p>
+)}
 
           <button
             type="submit"

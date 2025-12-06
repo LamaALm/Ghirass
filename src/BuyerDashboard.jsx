@@ -31,15 +31,10 @@ useEffect(() => {
   const handleLogout = () => {
     localStorage.removeItem("buyerData");
     localStorage.removeItem("buyerFavorites");
-    navigate("/buyer-login");
+    window.location.href = "/";
   }
+  
 
-  // لو واحد حاول يدخل بدون login
-  useEffect(() => {
-    if (!buyerInfo) {
-      navigate("/buyer-login");
-    }
-  }, [buyerInfo, navigate]);
 
   // =========================
   // Fetch crops من السيرفر
@@ -158,7 +153,7 @@ const toggleFavorite = (crop) => {
         <div className="flex item-center gap-4">
           <button
           onClick={handleLogout}
-          className="text-sm bg-[#8fae8d] hover:bg-[#7da07b] text-white px-4 py-2 rounded-lg transition"
+          className="text-[#3e5e40] hover:underline text-sm"
           >
             Logout
           </button>
@@ -256,11 +251,12 @@ const toggleFavorite = (crop) => {
       {filteredCrops.length === 0 ? (
         <p className="text-gray-500 italic mt-6">No crops found.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+        <div className="flex flex-wrap gap-4 mt-4">
           {filteredCrops.map((crop) => (
             <div
               key={crop.id}
-              className="bg-white rounded-xl shadow border border-[#e0e6dc] p-4 hover:shadow-md transition-all relative"
+              className="bg-white rounded-xl shadow border border-[#e0e6dc] p-4 hover:shadow-md transition-all relative 
+           w-[260px] h-[420px] flex flex-col"
             >
               {/* Favorite button */}
               <button
@@ -277,8 +273,10 @@ const toggleFavorite = (crop) => {
               <img
                 src={crop.image}
                 alt={crop.name}
-                className="w-full h-36 object-cover rounded-lg mb-3"
+                className="w-full h-[150px] object-cover rounded-lg mb-3"
               />
+              <div className="flex-1">
+    
               <h3 className="font-semibold text-[#3e5e40] text-lg">
                 {crop.name}
               </h3>
@@ -286,6 +284,7 @@ const toggleFavorite = (crop) => {
               <p className="text-[#678a66] text-sm font-medium mb-2">
                 {crop.price} SAR/kg
               </p>
+              </div>
 
               <div className="text-sm text-gray-700 space-y-1 mb-3">
                 <p>
@@ -301,7 +300,7 @@ const toggleFavorite = (crop) => {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 <button
                   onClick={() => setSelectedSeller(crop)}
                   className="bg-[#8fae8d] hover:bg-[#7da07b] text-white py-2 rounded-lg text-sm"

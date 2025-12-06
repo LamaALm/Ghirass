@@ -164,17 +164,31 @@ export default function BuyerLogin() {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-[#f6f7f3] px-4">
-      {/* Back arrow row */}
-      <button
-        onClick={() =>
-          isLoginMode ? navigate("/") : setIsLoginMode(true)
-        }
-        className="mb-4 text-sm text-gray-500 hover:text-[#3e5e40] self-start max-w-md w-full"
-      >
-        ← {isLoginMode ? "Back to main page" : "Back to login"}
-      </button>
+            {/* Back to main page */}
+      
+{isLoginMode && (
+          <div className="w-full max-w-md mb-4">
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-1 text-gray-600 hover:text-[#3e5e40] transition text-sm"
+        >
+          <span className="text-base">←</span>
+          <span>Back to main page</span>
+        </button>
+      </div>
+        )}
+        
 
       <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md border border-[#e0e6dc]">
+        {!isLoginMode && (
+          <button
+          type="button"
+          onClick={() => setIsLoginMode(true)}
+          className="flex items-center text-sm text-[#3e5e40] mb-0 hover:underline"
+          >
+            <span className="text-xl">←</span>
+          </button>
+        )}
         <h1 className="text-3xl font-semibold text-[#3e5e40] text-center mb-2">
           {isLoginMode ? "Buyer Login" : "Buyer Registration"}
         </h1>

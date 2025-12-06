@@ -15,37 +15,11 @@
     "password": "Gov@123",
     "role": "Government",
     "pin": "5566"
-    },
-    {
-      "id": "u3",
-      "name": "Ahmed Mohammed",
-      "username": "Ahmed",
-      "password": "aaa111",
-      "role": "Farmer",
-      "city": "Dammam",
-      "contact": "0563791407"
     }
   ],
 
   "farmers": [
-    {
-      "id": "1414",
-      "name": "Lama Almofadda",
-      "farmName": "Lama",
-      "city": "Jubail",
-      "contact": "0563791407",
-      "username": "Lamaahmed",
-      "password": "Qwe123"
-    },
-    {
-      "id": "c9bf",
-      "name": "Ahmed Mohammed",
-      "farmName": "AhmedMohammed",
-      "city": "Dammam",
-      "contact": "0563791407",
-      "username": "Ahmed",
-      "password": "aaa111"
-    }
+    
   ],
 
   "buyers": [
@@ -79,7 +53,7 @@
   {
     "id": "L-003",
     "licenseNumber": "L-003",
-    "farmerName": "Renad Aldrwish",
+    "farmerName": "Renad Aldriwish",
     "farmName": "Wardah Farm",
     "city": "Dammam",
     "status": "Valid"

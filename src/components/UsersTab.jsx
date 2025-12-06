@@ -17,9 +17,8 @@ const handleDeleteUser = async (user) => {
       method: "DELETE",
     });
 
-    // Step 2: if user is a Farmer → delete from /farmers
+    // Step 2A: if user is a Farmer → delete from /farmers + crops
     if (user.role === "Farmer") {
-      // find farmer record
       const farmerMatch = await fetch(
         `https://ghirass-api.onrender.com/farmers?username=${user.username}`
       ).then((res) => res.json());
@@ -32,7 +31,7 @@ const handleDeleteUser = async (user) => {
           method: "DELETE",
         });
 
-        // Step 3: delete all crops belonging to this farmer
+        // delete all crops belonging to this farmer
         const farmerCrops = await fetch(
           `https://ghirass-api.onrender.com/crops?farmerId=${farmerId}`
         ).then((res) => res.json());
@@ -46,8 +45,23 @@ const handleDeleteUser = async (user) => {
       }
     }
 
+    // Step 2B: if user is a Buyer → delete from /buyers
+    if (user.role === "Buyer") {
+      const buyerMatch = await fetch(
+        `https://ghirass-api.onrender.com/buyers?username=${user.username}`
+      ).then((res) => res.json());
+
+      if (buyerMatch.length > 0) {
+        const buyerId = buyerMatch[0].id;
+
+        await fetch(`https://ghirass-api.onrender.com/buyers/${buyerId}`, {
+          method: "DELETE",
+        });
+      }
+    }
+
     alert("User and related data deleted successfully.");
-    fetchUsers();
+    fetchUsers(); // عشان يحدث جدول اليوزرز بعد الحذف
 
   } catch (err) {
     console.error("Error deleting user:", err);
