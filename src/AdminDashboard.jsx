@@ -19,6 +19,11 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [logs, setLogs] = useState([]);
 
+  const handleLogout = () => {
+  localStorage.removeItem("farmerData");
+  window.location.href = "/"; 
+};
+
   const fetchUsers = () => {
   fetch("https://ghirass-api.onrender.com/users")
     .then((res) => res.json())
@@ -110,13 +115,22 @@ useEffect(() => {
     Admin Dashboard
   </h1>
 
-  {/* Logo on the right */}
-  <img
-    src={logo}
-    alt="Ghirass Logo"
-    className="h-20 cursor-pointer hover:opacity-80 transition"
-    onClick={() => navigate("/")}
-  />
+   {/* Right: Logout + Logo */}
+  <div className="flex items-center gap-4">
+    <button
+      onClick={handleLogout}
+      className="text-sm text-[#3e5e40] underline underline-offset-2 hover:text-[#2c4630] transition"
+    >
+      Logout
+    </button>
+
+    <img
+      src={logo}
+      alt="Ghirass Logo"
+      className="h-20 cursor-pointer hover:opacity-80 transition"
+      onClick={() => navigate("/")}
+    />
+  </div>
 </div>
         
   

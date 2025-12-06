@@ -14,6 +14,11 @@ export default function GovernmentDashboard() {
   const [licenses, setLicenses] = useState([]);
   const [farmers, setFarmers] = useState([]);
   const [crops, setCrops] = useState([]);
+  
+  const handleLogout = () => {
+  localStorage.removeItem("farmerData");
+  window.location.href = "/"; 
+};
 
   useEffect(() => {
     Promise.all([
@@ -43,13 +48,22 @@ export default function GovernmentDashboard() {
     Government Dashboard
   </h1>
 
-  {/* Logo on the right */}
-  <img
-    src={logo}
-    alt="Ghirass Logo"
-    className="h-20 cursor-pointer hover:opacity-80 transition"
-    onClick={() => navigate("/")}
-  />
+    {/* Right: Logout + Logo */}
+  <div className="flex items-center gap-4">
+    <button
+      onClick={handleLogout}
+      className="text-sm text-[#3e5e40] underline underline-offset-2 hover:text-[#2c4630] transition"
+    >
+      Logout
+    </button>
+
+    <img
+      src={logo}
+      alt="Ghirass Logo"
+      className="h-20 cursor-pointer hover:opacity-80 transition"
+      onClick={() => navigate("/")}
+    />
+  </div>
 </div>
         
         <p className="text-gray-600 mb-6">
