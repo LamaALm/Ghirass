@@ -31,7 +31,7 @@ export default function OverviewTab({ stats, chartData, pieChartData }) {
           <p className="text-3xl font-semibold text-[#3e5e40]">{stats.totalUsers}</p>
         </div>
         <div className="bg-white shadow p-4 rounded-xl border border-[#e0e6dc]">
-          <h3 className="text-gray-600">Top City</h3>
+          <h3 className="text-gray-600">Top City (most crops)</h3>
           <p className="text-xl font-semibold text-[#3e5e40]">{stats.topCity}</p>
         </div>
       </div>
